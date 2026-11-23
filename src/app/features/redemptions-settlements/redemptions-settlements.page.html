@@ -1,0 +1,189 @@
+﻿<div class="redemptions">
+  <header class="intro">
+    <div class="labels">
+      <wh-status-badge label="ADM-13 / M6" />
+      <wh-status-badge tone="warning" label="Demo Data" />
+    </div>
+    <h2>Redemptions &amp; Settlements</h2>
+    <p>Review voucher requests, track issuance, and inspect academic demo redemption history.</p>
+  </header>
+
+  @if (state().kind === 'loading') {
+    <wh-loading-state message="Loading sample redemption records…" />
+  } @else if (state().kind === 'error') {
+    <wh-error-state message="Sample redemption records could not be loaded." retryLabel="Retry loading samples"
+                    (retry)="load()" />
+  }
+
+  @if (snapshot(); as sample) {
+    <section aria-labelledby="redemption-overview">
+      <h2 id="redemption-overview">Redemption overview</h2>
+      <p class="muted section-note">Sample totals as of {{ sample.asOf | date:'d MMM y':'UTC' }}.</p>
+      <div class="metrics">
+        @for (metric of metrics(); track metric.label) {
+          <wh-card>
+            <h3>{{ metric.label }}</h3>
+            <p class="metric-value">{{ metric.count | number }}</p>
+          </wh-card>
+        }
+      </div>
+    </section>
+
+    <wh-card heading="Redemption requests">
+      <div class="filters" role="group" aria-label="Redemption filters">
+        <wh-search-input label="Search requests" placeholder="Reference, user ID or voucher" [(value)]="search" />
+        <wh-filter-select label="Request status" [options]="requestOptions" [(value)]="status" />
+        <wh-filter-select label="Issuance status" [options]="issuanceOptions" [(value)]="issuance" />
+        <wh-filter-select label="Sample date range" [options]="dateOptions" [(value)]="range" />
+        <button whButton variant="outline" (click)="resetFilters()">Reset filters</button>
+      </div>
+      <p #resultsHeading class="muted results" role="status" tabindex="-1">{{ filtered().length }} of {{ sample.requests.length }} matching sample requests</p>
+      @if (filtered().length) {
+        <div class="table-scroll" role="region" tabindex="0" aria-label="Redemption requests table scroll area">
+          <table class="request-table">
+            <caption class="visually-hidden">Sample redemption requests</caption>
+            <thead>
+              <tr>
+                <th scope="col">Request reference</th><th scope="col">Sample user ID</th><th scope="col">Voucher</th>
+                <th scope="col">Coins requested</th><th scope="col">Request date (UTC)</th>
+                <th scope="col">Request status</th><th scope="col">Issuance status</th><th scope="col">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of filtered(); track row.reference) {
+                <tr>
+                  <th scope="row">{{ row.reference }}</th><td>{{ row.userId }}</td><td>{{ row.voucher }}</td>
+                  <td>{{ terms.coins | number }}</td><td>{{ row.requestedAt | date:'d MMM y':'UTC' }}</td>
+                  <td><wh-status-badge [label]="row.status" [tone]="requestTones[row.status]" /></td>
+                  <td><wh-status-badge [label]="issuanceStatus(row)" [tone]="issuanceTones[issuanceStatus(row)]" /></td>
+                  <td>
+                    <button whButton variant="outline" (click)="showDetails(row, $event)"
+                            [attr.aria-label]="'View details for ' + row.reference"
+                            [attr.aria-expanded]="selected()?.reference === row.reference"
+                            [attr.aria-controls]="selected()?.reference === row.reference ? 'redemption-details' : null">
+                      View details
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <wh-empty-state message="No sample redemption requests match these filters." />
+      }
+
+      @if (selected(); as row) {
+        <section id="redemption-details" class="details" aria-labelledby="redemption-title" (keydown.escape)="closeDetails()">
+          <div class="split-header">
+            <h3 #detailsHeading id="redemption-title" tabindex="-1">Request {{ row.reference }}</h3>
+            <button whButton variant="outline" (click)="closeDetails()">Close details</button>
+          </div>
+          <dl class="detail-grid">
+            <div><dt>Sample user</dt><dd>{{ row.userId }}</dd></div>
+            <div><dt>Voucher</dt><dd>{{ row.voucher }}</dd></div>
+            <div><dt>Coin amount</dt><dd>{{ terms.coins | number }} Coins</dd></div>
+            <div><dt>Requested (UTC)</dt><dd>{{ row.requestedAt | date:'d MMM y, HH:mm':'UTC' }}</dd></div>
+            <div><dt>Request status</dt><dd><wh-status-badge [label]="row.status" [tone]="requestTones[row.status]" /></dd></div>
+            <div><dt>Reservation</dt><dd>{{ row.reservation }}</dd></div>
+            <div><dt>Debit</dt><dd>{{ row.debit }}</dd></div>
+            <div><dt>Issuance</dt><dd><wh-status-badge [label]="issuanceStatus(row)" [tone]="issuanceTones[issuanceStatus(row)]" /></dd></div>
+          </dl>
+          @if (row.status === 'Pending') {
+            <p class="muted">Admin review is pending. The sample reservation remains held.</p>
+          } @else {
+            <p><strong>{{ row.status === 'Cancelled' ? 'Requester activity' : 'Admin review' }}</strong>
+              {{ row.review.actor }} · {{ row.review.at | date:'d MMM y, HH:mm':'UTC' }} UTC</p>
+            <p>{{ row.review.note }}</p>
+          }
+          @if (row.status === 'Approved' && row.issuance.status === 'Issuance failed') {
+            <p class="failure"><strong>Failure reason</strong> {{ row.issuance.reason }}</p>
+          }
+          <h4>Request timeline</h4>
+          <ol class="timeline">
+            @for (event of timeline(); track event.reference) {
+              <li><time [attr.datetime]="event.at">{{ event.at | date:'d MMM y, HH:mm':'UTC' }} UTC</time>
+                <span>{{ event.event }}</span></li>
+            }
+          </ol>
+        </section>
+      }
+    </wh-card>
+
+    <wh-card heading="Admin approval queue">
+      <p class="section-note"><wh-status-badge tone="warning" [label]="pending().length + ' pending review'" /></p>
+      @if (pending().length) {
+        <ul class="queue">
+          @for (row of pending(); track row.reference) {
+            <li>
+              <div><strong>{{ row.reference }} · {{ row.voucher }}</strong>
+                <p class="muted">{{ row.userId }} · {{ row.requestedAt | date:'d MMM y':'UTC' }} UTC · {{ terms.coins | number }} Coins held</p></div>
+              <button whButton variant="outline" (click)="showDetails(row, $event)"
+                      [attr.aria-label]="'Review sample request ' + row.reference"
+                      [attr.aria-expanded]="selected()?.reference === row.reference"
+                      [attr.aria-controls]="selected()?.reference === row.reference ? 'redemption-details' : null">
+                View details
+              </button>
+            </li>
+          }
+        </ul>
+      } @else {
+        <wh-empty-state message="There are no pending sample requests." />
+      }
+      <div class="decision">
+        <h3>Read-only decision preview</h3>
+        <p>A sample LKR {{ terms.lkr }} voucher costs {{ terms.coins | number }} Coins. Eligibility requires at least
+          {{ terms.minimum | number }} spendable Coins before requesting, leaving at least {{ terms.minimum - terms.coins | number }} spendable Coins.
+          A request holds {{ terms.coins | number }} Coins with the debit still unposted.</p>
+        <dl class="decision-grid">
+          <div><dt>Approve</dt><dd>The backend consumes the hold and finalizes one {{ terms.coins | number }}-Coin debit. Issuance follows approval.</dd></div>
+          <div><dt>Reject or cancel</dt><dd>The backend releases the hold once. The debit stays unposted.</dd></div>
+        </dl>
+      </div>
+    </wh-card>
+
+    <section aria-labelledby="tracker-heading">
+      <h2 id="tracker-heading">Voucher issuance tracker</h2>
+      <p class="muted section-note">The backend owns issued voucher artwork, unique codes, and QR generation. Issuance adds no debit.</p>
+      <div class="tracker-grid">
+        @for (group of tracker(); track group.status) {
+          <wh-card [heading]="group.heading">
+            @for (row of group.rows; track row.reference) {
+              <article class="issue-item" [class.issue-failed]="row.issuance.status === 'Issuance failed'">
+                <wh-status-badge [label]="row.issuance.status" [tone]="issuanceTones[row.issuance.status]" />
+                <h3>{{ row.voucher }}</h3>
+                <p class="muted">{{ row.issuance.reference }} · Request {{ row.reference }}</p>
+                @switch (row.issuance.status) {
+                  @case ('Awaiting issuance') {
+                    <p>Approval is recorded in the sample. Issuance is pending.</p>
+                  }
+                  @case ('Issued') {
+                    <p>Sample issuance · {{ row.issuance.at | date:'d MMM y, HH:mm':'UTC' }} UTC</p>
+                    <div class="artwork">
+                      <span>Sample voucher preview</span>
+                      <strong>LKR {{ terms.lkr }}</strong>
+                      <span>{{ row.voucher }} · Display only</span>
+                    </div>
+                  }
+                  @case ('Issuance failed') {
+                    <p>Attempt · {{ row.issuance.at | date:'d MMM y, HH:mm':'UTC' }} UTC</p>
+                    <p class="failure">{{ row.issuance.reason }}</p>
+                    <p>The request remains approved and unissued. The finalized debit is preserved.
+                      A controlled, idempotent backend retry can attempt issuance without an additional debit. There is no automatic refund.</p>
+                  }
+                }
+              </article>
+            } @empty {
+              <wh-empty-state message="No sample records in this issuance state." />
+            }
+          </wh-card>
+        }
+      </div>
+    </section>
+
+    <wh-card heading="Reconciliation and audit">
+      <p class="muted section-note">Sample events trace the reservation, review, debit, and issuance lifecycle. Academic demo reconciliation covers Coins and vouchers only.</p>
+      <wh-data-table caption="Sample redemption audit events" [rows]="audit()" [columns]="auditColumns" [rowKey]="auditKey" />
+    </wh-card>
+  }
+</div>
