@@ -67,9 +67,9 @@ describe('Admin workspace integration', () => {
 
     expect(router.url).toBe('/preview/dashboard');
     http.expectNone(() => true);
-    const dashboard = harness.routeNativeElement!;
-    const button = dashboard.querySelector<HTMLButtonElement>('main button')!;
-    const status = dashboard.querySelector('main [role="status"]')!;
+    const healthCard = harness.routeNativeElement!.querySelector('wh-card[heading="Platform health"]')!;
+    const button = healthCard.querySelector<HTMLButtonElement>('button')!;
+    const status = healthCard.querySelector('.health-status[role="status"]')!;
 
     button.click();
     harness.detectChanges();
@@ -82,7 +82,9 @@ describe('Admin workspace integration', () => {
     expect(TestBed.inject(AdminAccessService).decide().allowed).toBe(false);
 
     button.click();
-    http.expectOne({ method: 'GET', url: healthUrl }).flush(
+    const failedRequest = http.expectOne({ method: 'GET', url: healthUrl });
+    expect(failedRequest.request.headers.has('Authorization')).toBe(false);
+    failedRequest.flush(
       { message: 'Internal diagnostics' },
       { status: 401, statusText: 'Unauthorized' },
     );
