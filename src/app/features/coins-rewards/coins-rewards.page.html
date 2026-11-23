@@ -1,0 +1,115 @@
+﻿<div class="coins-page">
+  <header class="intro" aria-label="Coins &amp; Rewards overview">
+    <wh-status-badge tone="warning" label="Demo Data" />
+    <h2>Review Coins activity</h2>
+    <p>Explore sample wallet balances, reward history, and the rules behind voucher eligibility.</p>
+  </header>
+
+  @if (state().kind === 'loading') {
+    <wh-loading-state message="Loading sample Coins activity…" />
+  } @else if (state().kind === 'error') {
+    <wh-error-state message="Sample Coins activity could not be loaded." retryLabel="Retry loading sample data"
+                    (retry)="load()" />
+  }
+
+  @if (view(); as sample) {
+    <section aria-labelledby="summary-heading">
+      <h2 id="summary-heading">Coins overview</h2>
+      <p class="muted section-note">Sample totals across the demo accounts, including balances carried into the history window.</p>
+      <div class="metrics">
+        @for (metric of metrics(); track metric.label) {
+          <wh-card>
+            <h3>{{ metric.label }}</h3>
+            <p class="metric-value">{{ metric.value | number }}</p>
+            <p class="muted">{{ metric.detail }}</p>
+          </wh-card>
+        }
+      </div>
+    </section>
+
+    <wh-card heading="Coin transaction history">
+      <p class="muted section-note">Sample history through {{ sampleDate() }}.</p>
+      <div class="toolbar" role="group" aria-label="Transaction filters">
+        <wh-search-input label="Search history" placeholder="User ID or reference" [(value)]="search" />
+        <wh-filter-select label="Transaction type" [options]="types" [(value)]="type" />
+        <wh-filter-select label="Status" [options]="statuses" [(value)]="status" />
+        <wh-filter-select label="Date range" [options]="ranges" [(value)]="range" />
+        <button whButton variant="outline" (click)="resetFilters()">Reset filters</button>
+      </div>
+      <p class="muted result-count" role="status">{{ rows().length }} of {{ sample.transactions.length }} sample transactions</p>
+      @if (badges().length) {
+        <ul class="badges" aria-label="Filtered transaction status counts">
+          @for (badge of badges(); track badge.status) {
+            <li><wh-status-badge [tone]="badge.tone" [label]="badge.label" /></li>
+          }
+        </ul>
+      }
+      <wh-data-table caption="Sample Coin transactions" [rows]="rows()" [columns]="columns" [rowKey]="rowKey"
+                     emptyMessage="No sample transactions match your filters." />
+    </wh-card>
+  }
+
+  <div class="details-grid">
+    <wh-card heading="Reward rules">
+      <p class="muted section-note">Approved project rules. The overview is informational.</p>
+      <dl class="rules">
+        @for (rule of rewardRules; track rule.title) {
+          <div>
+            <dt>{{ rule.title }}</dt>
+            <dd>{{ rule.condition }} · <strong>+{{ rule.amount }} Coins once</strong></dd>
+          </div>
+        }
+      </dl>
+      <ul class="notes">
+        <li>Exactly one verified winner per community game.</li>
+        <li>The game creator cannot win their own game.</li>
+        <li>No Coins are awarded for pending or rejected results.</li>
+      </ul>
+    </wh-card>
+
+    @if (view(); as sample) {
+      <wh-card heading="Level progress">
+        <p class="muted section-note">Sample wallet {{ sample.sampleWallet.userId }} · Proposed {{ levelThreshold | number }}-Coin threshold</p>
+        <label class="progress-label">
+          <span>Lifetime-earned progress toward the next threshold</span>
+          <progress [value]="levelProgress()" [max]="levelThreshold">
+            {{ levelProgress() }} of {{ levelThreshold }} Coins
+          </progress>
+        </label>
+        <p class="muted progress-caption">{{ levelProgress() | number }} of {{ levelThreshold | number }} Coins toward the next threshold</p>
+        <dl class="wallet">
+          <div><dt>Lifetime Coins Earned</dt><dd>{{ sample.sampleWallet.lifetimeEarned | number }}</dd></div>
+          <div><dt>Current Spendable Coins</dt><dd>{{ sample.sampleWallet.spendable | number }}</dd></div>
+          <div><dt>Reserved Coins</dt><dd>{{ sample.sampleWallet.reserved | number }}</dd></div>
+        </dl>
+      </wh-card>
+    }
+  </div>
+
+  <wh-card heading="Sample voucher eligibility">
+    <div class="voucher-layout">
+      <div class="voucher-summary">
+        <p class="muted">Academic demo voucher</p>
+        <p class="voucher-value">LKR 100</p>
+        <p>{{ voucherCost | number }} Coins</p>
+        @if (view(); as sample) {
+          @let eligible = sample.sampleWallet.spendable >= minimumSpendable;
+          <wh-status-badge [tone]="eligible ? 'success' : 'neutral'"
+                           [label]="eligible ? 'Sample balance meets minimum' : 'Sample balance below minimum'" />
+          <p class="muted">{{ sample.sampleWallet.userId }} has {{ sample.sampleWallet.spendable | number }} spendable Coins.</p>
+        }
+      </div>
+      <div>
+        <p>A request requires at least <strong>{{ minimumSpendable | number }} spendable Coins</strong>,
+          leaving at least <strong>{{ minimumSpendable - voucherCost | number }} spendable Coins</strong> after redemption.</p>
+        <ol class="notes lifecycle">
+          <li>Request reserves {{ voucherCost | number }} Coins.</li>
+          <li>Rejection or cancellation releases the reservation once.</li>
+          <li>Admin approval finalizes the {{ voucherCost | number }}-Coin debit once and consumes the reservation.</li>
+          <li>Voucher issuance does not debit again. If issuance fails, the request stays approved and unissued.
+            The approved debit remains, with no automatic refund or false issuance confirmation.</li>
+        </ol>
+      </div>
+    </div>
+  </wh-card>
+</div>
