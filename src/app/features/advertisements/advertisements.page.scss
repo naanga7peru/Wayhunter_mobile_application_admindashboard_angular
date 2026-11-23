@@ -1,0 +1,70 @@
+﻿:host { display: block; min-width: 0; }
+.advertisements { display: grid; grid-template-columns: minmax(0, 1fr); gap: clamp(1rem, 2vw, 1.65rem); }
+.intro {
+  padding: clamp(1rem, 4vw, 2.25rem); border: 1px solid var(--line); border-radius: var(--radius-panel);
+  background: radial-gradient(ellipse at 85% 0%, #dce8ff, transparent 72%), var(--glass);
+  box-shadow: var(--panel-shadow);
+}
+.badges { display: flex; flex-wrap: wrap; gap: .45rem; }
+.intro h2 { margin: .7rem 0 .3rem; font-size: clamp(1.45rem, 3vw, 2.25rem); letter-spacing: -.035em; }
+.intro p, .muted { margin: 0; color: var(--muted); line-height: 1.5; }
+section > h2 { margin: 0 0 .4rem; font-size: 1.2rem; }
+.section-note { margin-bottom: .85rem; }
+
+.metrics, .filters, .details-grid, .preview-grid, .intake, .performance { display: grid; gap: .8rem; }
+.metrics { grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.75rem), 1fr)); }
+.metrics h3 { margin: .45rem 0 0; font-size: .875rem; color: var(--muted); }
+.metric-value { margin: .35rem 0 0; font-size: 1.75rem; font-weight: 750; }
+.metric-icon {
+  display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: .55rem;
+  background: var(--wash); color: var(--accent); font-weight: 750;
+}
+.metric-icon[data-tone='success'] { color: var(--success-ink); background: var(--success-bg); }
+.metric-icon[data-tone='warning'] { color: var(--warning-ink); background: var(--warning-bg); }
+
+.filters { align-items: end; grid-template-columns: repeat(auto-fit, minmax(min(100%, 10.5rem), 1fr)); }
+.results { margin-block: .85rem .6rem; font-size: .875rem; scroll-margin-top: 5rem; }
+.table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius-control); }
+table { width: 100%; border-collapse: collapse; font-size: .875rem; }
+th, td { padding: .55rem .7rem; text-align: start; vertical-align: middle; }
+thead { background: var(--neutral-bg); }
+tbody tr { border-block-start: 1px solid var(--line); }
+td button, td wh-status-badge { white-space: nowrap; }
+
+.details { margin-top: 1rem; padding: 1rem; border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--surface); }
+.split { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .65rem; }
+#details-title { scroll-margin-top: 5rem; }
+.details-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr)); }
+dt { font-weight: 700; }
+dd { margin: .2rem 0 0; }
+
+.preview-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); }
+.preview { margin: 0; min-width: 0; }
+.preview figcaption { margin: 0 0 .5rem; font-size: .875rem; font-weight: 700; }
+.phone { padding: .75rem; border: 2px solid var(--line); border-radius: 1rem; background: var(--neutral-bg); }
+.phone-header { font-weight: 750; }
+.phone-header span, .phone-sponsor { color: var(--muted); font-size: .75rem; }
+.creative-art {
+  display: grid; align-content: end; gap: .35rem; min-height: 7rem; padding: .75rem; margin-top: .6rem;
+  border-radius: .65rem; color: white;
+  background: radial-gradient(ellipse at 90% -5%, #557dc9, transparent 64%), linear-gradient(130deg, #203b68, #284e8b);
+}
+.creative-art.square { aspect-ratio: 1; width: min(100%, 11rem); background: linear-gradient(150deg, #24695e, #174a43); }
+.creative-art.promo { min-height: 9rem; background: linear-gradient(150deg, #695095, #45336c); }
+.creative-art span { font-size: .75rem; }
+.phone-sponsor { margin: .4rem 0 0; }
+
+.queue { margin: 0; padding: 0; list-style: none; }
+.queue li { border-block-start: 1px solid var(--line); padding-block: .65rem; }
+.policy { margin-top: .65rem; padding: .75rem; background: var(--wash); border-radius: var(--radius-control); }
+
+.intake { align-items: start; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); }
+.intake label { display: block; margin-bottom: .35rem; font-weight: 700; }
+.intake input { width: 100%; min-height: 44px; padding: .35rem; border: 1px solid var(--control-border); border-radius: var(--radius-control); font: inherit; }
+.intake img { max-width: 100%; max-height: 18rem; object-fit: contain; border-radius: var(--radius-control); }
+.file-meta { overflow-wrap: anywhere; }
+.file-error { color: var(--danger-ink); }
+
+.performance { margin: 0; grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr)); }
+.performance > div { padding: .75rem; background: var(--neutral-bg); }
+.performance dd { font-size: 1.35rem; font-weight: 750; }
