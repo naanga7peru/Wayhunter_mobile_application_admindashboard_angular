@@ -1,0 +1,155 @@
+﻿<div class="inventory-page">
+  <header class="intro">
+    <div class="labels">
+      <wh-status-badge label="ADM-12" />
+      <wh-status-badge tone="warning" label="Demo Data" />
+    </div>
+    <h2>Merchants &amp; Voucher Inventory</h2>
+    <p>Review sample merchant sources, stock availability, and voucher expiry. Preview source documents for manual verification.</p>
+  </header>
+
+  @if (state().kind === 'loading') {
+    <wh-loading-state message="Loading sample voucher inventory…" />
+  } @else if (state().kind === 'error') {
+    <wh-error-state message="Sample inventory could not be loaded." retryLabel="Retry loading sample inventory" (retry)="load()" />
+  }
+
+  @if (snapshot(); as sample) {
+    <section aria-labelledby="stock-overview">
+      <h2 id="stock-overview">Stock overview</h2>
+      <p class="muted summary-note">All sample offers as of {{ (sample.asOf + 'T00:00:00Z') | date:'d MMM y':'UTC' }}. Low stock means 1–{{ lowStockMax }} available units in this preview.</p>
+      <div class="metrics">
+        @for (metric of metrics(); track metric.label) {
+          <wh-card>
+            <h3>{{ metric.label }}</h3>
+            <p class="metric-value">{{ metric.count | number }}</p>
+            <p class="muted">{{ metric.detail }}</p>
+          </wh-card>
+        }
+      </div>
+    </section>
+
+    <wh-card heading="Voucher inventory">
+      <div class="filters" role="group" aria-label="Inventory filters">
+        <wh-search-input label="Search vouchers" placeholder="Name, reference or merchant" [(value)]="search" />
+        <wh-filter-select label="Merchant" [options]="merchantOptions()" [(value)]="merchant" />
+        <wh-filter-select label="Inventory status" [options]="statusOptions" [(value)]="status" />
+        <wh-filter-select label="Stock availability" [options]="stockOptions" [(value)]="stock" />
+        <button whButton variant="outline" (click)="resetFilters()">Reset filters</button>
+      </div>
+      <p #resultsRegion class="muted results" role="status" tabindex="-1">{{ filtered().length }} of {{ inventory().length }} matching sample offers</p>
+      @if (filtered().length) {
+        <div class="table-scroll" role="region" aria-label="Voucher inventory table scroll area" tabindex="0">
+          <table>
+            <caption class="visually-hidden">Sample voucher inventory</caption>
+            <thead>
+              <tr>
+                <th scope="col">Reference</th><th scope="col">Voucher</th><th scope="col">Merchant / source</th>
+                <th scope="col">Coin cost</th><th scope="col">Sample value</th>
+                <th scope="col">Available</th><th scope="col">Reserved</th><th scope="col">Expiry (UTC)</th>
+                <th scope="col">Status</th><th scope="col">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of filtered(); track row.reference) {
+                <tr>
+                  <th scope="row">{{ row.reference }}</th>
+                  <td>{{ row.name }}</td>
+                  <td>{{ row.merchant.name }}<small>{{ row.merchant.source }}</small></td>
+                  <td>{{ voucherTerms.coinCost | number }}</td><td>LKR {{ voucherTerms.valueLkr | number }}</td>
+                  <td>{{ row.available | number }}</td><td>{{ row.reserved | number }}</td>
+                  <td>{{ (row.expiresOn + 'T00:00:00Z') | date:'d MMM y':'UTC' }}</td>
+                  <td><wh-status-badge [tone]="tones[row.status]" [label]="row.status" /></td>
+                  <td>
+                    <button whButton variant="outline" type="button" (click)="openDetails(row, $event)"
+                            [attr.aria-label]="'View details for ' + row.name"
+                            [attr.aria-expanded]="selected()?.reference === row.reference"
+                            [attr.aria-controls]="selected()?.reference === row.reference ? 'voucher-details' : null">
+                      View Details
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <wh-empty-state message="No sample vouchers match these filters. Try clearing filters or searching by reference." />
+      }
+
+      @if (selected(); as voucher) {
+        <section id="voucher-details" class="details" aria-labelledby="voucher-details-title" (keydown.escape)="closeDetails()">
+          <div class="details-header">
+            <h3 #detailsHeading id="voucher-details-title" tabindex="-1">{{ voucher.name }}</h3>
+            <button whButton variant="outline" (click)="closeDetails()">Close details</button>
+          </div>
+          <div class="details-content">
+            <div class="artwork">
+              <p>Sample artwork</p>
+              <strong>LKR {{ voucherTerms.valueLkr | number }}</strong>
+              <span>{{ voucher.name }}</span>
+            </div>
+            <dl class="details-list">
+              <div><dt>Reference</dt><dd>{{ voucher.reference }}</dd></div>
+              <div><dt>Demo source</dt><dd>{{ voucher.merchant.name }} · {{ voucher.merchant.source }}</dd></div>
+              <div><dt>Coin cost</dt><dd>{{ voucherTerms.coinCost | number }} Coins</dd></div>
+              <div><dt>Expiry (UTC)</dt><dd>{{ (voucher.expiresOn + 'T00:00:00Z') | date:'d MMM y':'UTC' }}</dd></div>
+              <div><dt>Stock</dt><dd>{{ voucher.available }} available · {{ voucher.reserved }} reserved · {{ voucher.expired }} expired</dd></div>
+              <div><dt>Status</dt><dd><wh-status-badge [tone]="tones[voucher.status]" [label]="voucher.status" /></dd></div>
+            </dl>
+          </div>
+        </section>
+      }
+    </wh-card>
+
+    <wh-card heading="Merchant sources">
+      <div class="merchant-grid">
+        @for (merchant of merchants(); track merchant.id) {
+          <div class="merchant">
+            <h3>{{ merchant.name }}</h3>
+            <p class="muted">{{ merchant.source }} · {{ merchant.count }} offers</p>
+            <p>{{ merchant.available }} available · {{ merchant.reserved }} reserved · {{ merchant.expired }} expired</p>
+            <button whButton variant="outline" (click)="showMerchant(merchant.id)"
+                    [attr.aria-label]="'Show inventory for ' + merchant.name">Show inventory</button>
+          </div>
+        }
+      </div>
+    </wh-card>
+  }
+
+  <wh-card heading="Admin voucher intake preview">
+    <div class="intake-grid">
+      <div>
+        <wh-status-badge tone="info" label="Local only" />
+        <label for="voucher-source">Select a sample source file</label>
+        <input #fileInput id="voucher-source" type="file"
+               accept=".pdf,.png,.jpg,.jpeg,.webp"
+               [attr.aria-invalid]="fileError() ? 'true' : null"
+               [attr.aria-describedby]="fileError() ? 'intake-help intake-error' : 'intake-help'"
+               (change)="selectFile(fileInput)" />
+        <p id="intake-help" class="muted">PDF, PNG, JPEG or WebP, up to 5 MiB. The file stays on this device.</p>
+        @if (fileError()) {
+          <p id="intake-error" class="file-error" role="alert">{{ fileError() }}</p>
+        }
+        @if (selectedFile(); as filename) {
+          <p class="filename" role="status">Selected locally: <strong>{{ filename }}</strong></p>
+          <button whButton variant="outline" (click)="clearFile(fileInput)">Clear file</button>
+        }
+      </div>
+      <div class="guidance">
+        <h3>Manual verification checklist</h3>
+        <ol>
+          <li>Check that the source is readable and matches the merchant and offer.</li>
+          <li>Confirm the sample value, expiry date, and stock count against the source.</li>
+          <li>Resolve discrepancies before a source is accepted.</li>
+        </ol>
+        <p class="muted">Voucher artwork here is a placeholder. The academic demo code and QR belong to the issued voucher. OCR and barcode intake are optional.</p>
+      </div>
+    </div>
+  </wh-card>
+
+  <wh-card heading="Academic demo voucher terms">
+    <p class="terms">{{ voucherTerms.coinCost | number }} Coins for a sample LKR {{ voucherTerms.valueLkr | number }} voucher.
+      A request requires at least {{ voucherTerms.minimumSpendable | number }} spendable Coins.</p>
+  </wh-card>
+</div>

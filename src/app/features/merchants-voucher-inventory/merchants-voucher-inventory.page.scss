@@ -1,0 +1,87 @@
+﻿:host { display: block; min-width: 0; }
+
+.inventory-page { display: grid; grid-template-columns: minmax(0, 1fr); gap: clamp(1rem, 2vw, 1.6rem); }
+
+.intro {
+  padding: clamp(1rem, 4vw, 2.25rem);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  background: radial-gradient(ellipse at 85% 0%, #dae6ff, transparent 72%), var(--glass);
+  box-shadow: var(--panel-shadow);
+}
+
+.labels { display: flex; flex-wrap: wrap; gap: .45rem; }
+.intro h2 { margin: .7rem 0 .35rem; font-size: clamp(1.45rem, 3vw, 2.2rem); letter-spacing: -.035em; }
+.intro p, .muted { margin: 0; color: var(--muted); line-height: 1.5; }
+section > h2 { margin: 0 0 .35rem; font-size: 1.2rem; }
+.summary-note { margin-bottom: .85rem; }
+
+.metrics, .filters, .merchant-grid, .intake-grid, .details-content {
+  display: grid;
+  gap: .8rem;
+}
+.metrics { grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.75rem), 1fr)); }
+.metrics wh-card { padding: clamp(.85rem, 1.75vw, 1.2rem); }
+.metrics h3 { margin: 0; font-size: .875rem; color: var(--muted); }
+.metrics .muted { font-size: .8125rem; }
+.metric-value { margin: .35rem 0 .2rem; font-size: 1.7rem; font-weight: 750; font-variant-numeric: tabular-nums; }
+
+.filters { align-items: end; grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr)); }
+.filters button { justify-self: start; }
+.results { margin-block: .9rem .65rem; font-size: .875rem; scroll-margin-top: 5rem; }
+
+.table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius-control); }
+table { width: 100%; border-collapse: collapse; font-size: .875rem; }
+th, td { padding: .6rem .75rem; text-align: start; vertical-align: middle; }
+thead th { background: var(--neutral-bg); }
+tbody tr { border-block-start: 1px solid var(--line); }
+tbody tr:hover { background: #f5f8ff; }
+td small { display: block; margin-top: .2rem; color: var(--muted); }
+td button, td wh-status-badge { white-space: nowrap; }
+
+.details {
+  margin-top: 1rem;
+  padding: clamp(.75rem, 3vw, 1.25rem);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+}
+.details-header { display: flex; gap: .75rem; flex-wrap: wrap; align-items: center; justify-content: space-between; }
+.details-header h3 { margin: 0; scroll-margin-top: 5rem; }
+.details-content, .intake-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); }
+.details-content { margin-top: .85rem; align-items: start; }
+
+.artwork {
+  display: grid;
+  gap: .4rem;
+  padding: clamp(1rem, 4vw, 1.6rem);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: linear-gradient(125deg, var(--wash), var(--success-bg));
+}
+.artwork p { margin: 0; color: var(--muted); font-size: .8125rem; }
+.artwork strong { color: var(--accent); font-size: 1.65rem; }
+.details-list { margin: 0; }
+.details-list div { padding-bottom: .5rem; }
+.details-list dt { font-size: .8125rem; font-weight: 700; color: var(--muted); }
+.details-list dd { margin: .15rem 0 0; }
+
+.merchant-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); }
+.merchant, .guidance { padding: .9rem; border: 1px solid var(--line); border-radius: var(--radius-control); }
+.merchant h3, .guidance h3 { margin: 0 0 .35rem; font-size: 1rem; }
+.guidance ol { padding-inline-start: 1.25rem; margin-block: .5rem; line-height: 1.5; }
+
+.intake-grid label { display: block; font-weight: 700; margin-block: .65rem .35rem; }
+input[type='file'] {
+  width: 100%; min-height: 44px; padding: .25rem;
+  border: 1px solid var(--control-border); border-radius: var(--radius-control);
+  font: inherit; color: var(--ink);
+}
+input::file-selector-button {
+  min-height: 36px; margin-inline-end: .45rem; border: 0; border-radius: .35rem;
+  background: var(--wash); color: var(--accent); font: inherit; cursor: pointer;
+}
+#intake-help { margin-top: .4rem; }
+.file-error { color: var(--danger-ink); font-weight: 650; }
+.filename { overflow-wrap: anywhere; }
+.terms { margin: 0; line-height: 1.5; }
