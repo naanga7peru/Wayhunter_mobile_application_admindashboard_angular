@@ -26,7 +26,19 @@ const shellChildren: Routes = [
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'preview' },
   { path: 'login', loadComponent: () => import('./features/authentication/login.page').then(m => m.LoginPage) },
-  { path: 'preview', canMatch: [devPreviewGuard], component: AdminShell, children: shellChildren },
+  {
+    path: 'preview',
+    canMatch: [devPreviewGuard],
+    component: AdminShell,
+    children: [
+      ...shellChildren,
+      {
+        path: 'shared-ui',
+        title: 'Shared UI',
+        loadComponent: () => import('./shared/ui/shared-ui-preview').then(m => m.SharedUiPreview),
+      },
+    ],
+  },
   // Real admin pages are deliberately inaccessible until M1 implements auth+RBAC.
   { path: 'admin', canMatch: [authRequiredGuard], component: AdminShell, children: shellChildren },
   { path: '**', redirectTo: 'login' },
