@@ -1,0 +1,179 @@
+﻿<div class="advertisements">
+  <header class="intro">
+    <div class="badges"><wh-status-badge label="ADM-05 / M7" /><wh-status-badge tone="warning" label="Demo data" /></div>
+    <h2>Advertisements Management</h2>
+    <p>Manage advertisement inventory, review creative previews, and inspect demo delivery performance.</p>
+    <p>Publishing and delivery are offline in this preview.</p>
+  </header>
+
+  @if (state().kind === 'loading') {
+    <wh-loading-state message="Loading sample advertisements…" />
+  } @else if (state().kind === 'error') {
+    <wh-error-state message="Sample advertisements could not be loaded." retryLabel="Retry loading samples" (retry)="load()" />
+  }
+
+  @if (snapshot(); as sample) {
+    <section aria-labelledby="overview-title">
+      <h2 id="overview-title">Advertisement overview</h2>
+      <p class="muted section-note">Sample inventory as of {{ sample.asOf | date:'d MMM y':'UTC' }}.</p>
+      <div class="metrics">
+        @for (metric of metrics(); track metric.label) {
+          <wh-card>
+            <span class="metric-icon" aria-hidden="true" [attr.data-tone]="metric.tone">{{ metric.icon }}</span>
+            <h3>{{ metric.label }}</h3>
+            <p class="metric-value">{{ metric.count | number }}</p>
+          </wh-card>
+        }
+      </div>
+    </section>
+
+    <wh-card heading="Advertisement inventory">
+      <div class="filters" role="group" aria-label="Advertisement filters">
+        <wh-search-input label="Search advertisements" placeholder="ID, title or advertiser" [(value)]="search" />
+        <wh-filter-select label="Status" [options]="statusOptions" [(value)]="status" />
+        <wh-filter-select label="Creative type" [options]="creativeOptions" [(value)]="creative" />
+        <wh-filter-select label="Placement" [options]="placementOptions" [(value)]="placement" />
+        <wh-filter-select label="Updated date range" [options]="dateOptions" [(value)]="range" />
+        <button whButton variant="outline" (click)="resetFilters()">Reset filters</button>
+      </div>
+      <p #results class="muted results" role="status" tabindex="-1">{{ filtered().length }} of {{ ads().length }} matching sample advertisements</p>
+      @if (filtered().length) {
+        <div class="table-scroll" role="region" aria-label="Advertisement inventory table scroll area" tabindex="0">
+          <table>
+            <caption class="visually-hidden">Sample advertisement inventory</caption>
+            <thead><tr>
+              <th scope="col">Advertisement ID</th><th scope="col">Title</th><th scope="col">Sample advertiser</th>
+              <th scope="col">Placement</th><th scope="col">Creative type</th>
+              <th scope="col">Start (UTC)</th><th scope="col">End (UTC)</th>
+              <th scope="col">Status</th><th scope="col">Actions</th>
+            </tr></thead>
+            <tbody>
+              @for (ad of filtered(); track ad.id) {
+                <tr>
+                  <th scope="row">{{ ad.id }}</th><td>{{ ad.title }}</td><td>{{ ad.advertiser }}</td>
+                  <td>{{ ad.placement }}</td><td>{{ ad.creative }}</td>
+                  <td>{{ (ad.start + 'T00:00:00Z') | date:'d MMM y':'UTC' }}</td>
+                  <td>{{ (ad.end + 'T00:00:00Z') | date:'d MMM y':'UTC' }}</td>
+                  <td><wh-status-badge [label]="ad.status" [tone]="tones[ad.status]" /></td>
+                  <td>
+                    <button whButton variant="outline" (click)="showDetails(ad, $event)"
+                            [attr.aria-label]="'View details for ' + ad.id"
+                            [attr.aria-expanded]="selected()?.id === ad.id"
+                            [attr.aria-controls]="selected()?.id === ad.id ? 'advertisement-details' : null">View details</button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <wh-empty-state message="No sample advertisements match these filters. Try another search or reset the filters." />
+      }
+
+      @if (selected(); as ad) {
+        <section id="advertisement-details" class="details" aria-labelledby="details-title" (keydown.escape)="closeDetails()">
+          <div class="split"><h3 #detailsHeading id="details-title" tabindex="-1">{{ ad.title }}</h3>
+            <button whButton variant="outline" (click)="closeDetails()">Close details</button></div>
+          <p>{{ ad.description }}</p>
+          <dl class="details-grid">
+            <div><dt>Advertisement ID</dt><dd>{{ ad.id }}</dd></div>
+            <div><dt>Sample advertiser</dt><dd>{{ ad.advertiser }}</dd></div>
+            <div><dt>Creative type</dt><dd>{{ ad.creative }}</dd></div>
+            <div><dt>Placement</dt><dd>{{ ad.placement }}</dd></div>
+            <div><dt>Start (UTC)</dt><dd>{{ (ad.start + 'T00:00:00Z') | date:'d MMM y':'UTC' }}</dd></div>
+            <div><dt>End (UTC)</dt><dd>{{ (ad.end + 'T00:00:00Z') | date:'d MMM y':'UTC' }}</dd></div>
+            <div><dt>Status</dt><dd><wh-status-badge [label]="ad.status" [tone]="tones[ad.status]" /></dd></div>
+            <div><dt>Last updated (UTC)</dt><dd>{{ ad.updatedAt | date:'d MMM y, HH:mm':'UTC' }}</dd></div>
+          </dl>
+          <p><strong>Review notes</strong> · {{ ad.notes }}</p>
+          <p class="muted">Sample performance · {{ ad.impressions | number }} impressions · {{ ad.clicks | number }} clicks · {{ ctr(ad.clicks, ad.impressions) | number:'1.1-2' }}% CTR</p>
+        </section>
+      }
+    </wh-card>
+
+    <wh-card heading="Demo Creative Preview — Not Published">
+      <div class="preview-grid">
+        @for (ad of previews(); track ad.id) {
+          <figure class="preview">
+            <figcaption>{{ ad.creative }}</figcaption>
+            <div class="phone">
+              <div class="phone-header">WayHunter <span>{{ ad.placement }}</span></div>
+              <div class="creative-art" [class.square]="ad.creative === 'Square image'" [class.promo]="ad.creative === 'Promotional card'">
+                <span>Sample sponsored creative</span>
+                <strong>{{ ad.title }}</strong>
+              </div>
+              <p class="phone-sponsor">{{ ad.advertiser }}</p>
+            </div>
+          </figure>
+        }
+      </div>
+    </wh-card>
+
+    <wh-card heading="Advertisement review queue">
+      <p class="muted section-note">{{ pending().length }} sample advertisements pending review. Review the creative, sponsor label, placement, and dates against approved guidance.</p>
+      <ul class="queue">
+        @for (ad of pending(); track ad.id) {
+          <li class="split">
+            <div>
+              <h3>{{ ad.title }} <wh-status-badge label="Pending Review" tone="warning" /></h3>
+              <p>{{ ad.description }}</p>
+              <p class="muted">{{ ad.advertiser }} · {{ ad.creative }} · {{ ad.placement }}</p>
+              @if (ad.submittedAt) {
+                <p class="muted">Submitted {{ ad.submittedAt | date:'d MMM y, HH:mm':'UTC' }} UTC</p>
+              }
+            </div>
+            <button whButton variant="outline" (click)="showDetails(ad, $event)"
+                    [attr.aria-label]="'Review details for ' + ad.id"
+                    [attr.aria-expanded]="selected()?.id === ad.id"
+                    [attr.aria-controls]="selected()?.id === ad.id ? 'advertisement-details' : null">Review details</button>
+          </li>
+        } @empty {
+          <li><wh-empty-state message="No sample advertisements are pending review." /></li>
+        }
+      </ul>
+      <p class="muted policy"><strong>DECISION_REQUIRED</strong> · Production moderation criteria, reviewer permissions, and publish transitions require confirmation. This queue is read-only.</p>
+    </wh-card>
+  }
+
+  <wh-card heading="Local creative file preview">
+    <div class="intake">
+      <div>
+        <label for="ad-creative">Select a creative image</label>
+        <input #picker id="ad-creative" type="file" accept=".png,.jpg,.jpeg,.webp"
+               (change)="selectFile(picker)" [attr.aria-invalid]="fileError() ? 'true' : null"
+               [attr.aria-describedby]="fileError() ? 'creative-help creative-error' : 'creative-help'" />
+        <p id="creative-help" class="muted">PNG, JPEG, or WebP up to {{ sizeLimit }} MiB. The preview stays on this device.</p>
+        @if (fileError()) {
+          <p id="creative-error" class="file-error" role="alert">{{ fileError() }}</p>
+        }
+        @if (file(); as image) {
+          <p class="file-meta" role="status"><strong>{{ image.name }}</strong> · {{ image.type }} · {{ image.size / 1024 | number:'1.2-2' }} KiB</p>
+          <button whButton variant="outline" (click)="clearFile(picker); picker.focus()">Clear selected file</button>
+        }
+      </div>
+      @if (file(); as image) {
+        @if (image.url && !previewUnavailable()) {
+          <img [src]="image.url" alt="Selected local creative preview" (error)="previewUnavailable.set(true)" />
+        } @else {
+          <p role="status" class="muted">This browser could not display the selected image.</p>
+        }
+      }
+    </div>
+  </wh-card>
+
+  @if (snapshot(); as sample) {
+    <wh-card heading="Demo performance">
+      <p class="muted section-note">Illustrative counts across the sample inventory. CTR is clicks divided by impressions.</p>
+      <dl class="performance">
+        <div><dt>Sample impressions</dt><dd>{{ performance().impressions | number }}</dd></div>
+        <div><dt>Sample clicks</dt><dd>{{ performance().clicks | number }}</dd></div>
+        <div><dt>Sample CTR</dt><dd>{{ performance().ctr | number:'1.1-2' }}%</dd></div>
+        <div><dt>Sample active placements</dt><dd>{{ performance().activePlacements | number }}</dd></div>
+      </dl>
+    </wh-card>
+
+    <wh-card heading="Review &amp; audit history">
+      <wh-data-table caption="Illustrative advertisement events" [rows]="sample.history" [columns]="auditColumns" [rowKey]="auditKey" />
+    </wh-card>
+  }
+</div>
