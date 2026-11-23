@@ -70,7 +70,9 @@ export class AdminShell {
   }
 
   private pageTitle(): string {
-    const path = this.route.snapshot.firstChild?.routeConfig?.path;
-    return this.groups.flatMap(group => group.links).find(link => link.path === path)?.label ?? 'Dashboard';
+    const child = this.route.snapshot.firstChild;
+    return child?.title
+      ?? this.groups.flatMap(group => group.links).find(link => link.path === child?.routeConfig?.path)?.label
+      ?? 'Dashboard';
   }
 }

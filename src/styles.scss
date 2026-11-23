@@ -1,11 +1,8 @@
-﻿:root {
+﻿@use './app/shared/theme/tokens';
+
+:root {
   font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
   color-scheme: light;
-  --ink: #18243b;
-  --muted: #52627c;
-  --accent: #3456b3;
-  --line: #dce4f1;
-  --glass: rgb(255 255 255 / 86%);
 }
 
 * { box-sizing: border-box; }
@@ -21,7 +18,7 @@ a { color: var(--accent); text-decoration: none; }
 button {
   padding: .7rem 1rem;
   border: 1px solid transparent;
-  border-radius: .65rem;
+  border-radius: var(--radius-control);
   background: var(--accent);
   color: #fff;
   font: inherit;
@@ -29,7 +26,7 @@ button {
   cursor: pointer;
 }
 
-button:hover { background: #28479e; }
+button:hover { background: var(--accent-hover); }
 
 :focus-visible {
   outline: 2px solid var(--accent);
@@ -39,9 +36,9 @@ button:hover { background: #28479e; }
 .pane {
   padding: clamp(1rem, 3vw, 2rem);
   border: 1px solid var(--line);
-  border-radius: 1rem;
+  border-radius: var(--radius-panel);
   background: var(--glass);
-  box-shadow: 0 10px 28px #2539610d;
+  box-shadow: var(--panel-shadow);
   max-width: 850px;
   overflow-wrap: anywhere;
 }
