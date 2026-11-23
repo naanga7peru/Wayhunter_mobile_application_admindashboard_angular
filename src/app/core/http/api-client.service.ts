@@ -1,7 +1,8 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { catchError, Observable, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { normalizeApiError } from './api-error';
 
 export interface HealthResponse {
   service: string;
@@ -15,6 +16,8 @@ export class ApiClientService {
 
   // Liveness check only; no business API contract has been implemented yet.
   getHealth(): Observable<HealthResponse> {
-    return this.http.get<HealthResponse>(`${environment.apiBaseUrl}/health`);
+    return this.http
+      .get<HealthResponse>(`${environment.apiBaseUrl}/health`)
+      .pipe(catchError((error: unknown) => throwError(() => normalizeApiError(error))));
   }
 }
