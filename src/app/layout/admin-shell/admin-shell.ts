@@ -1,49 +1,76 @@
-import { Component } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+﻿import { Component, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { filter } from 'rxjs';
 
-interface MenuLink { label: string; path: string; owner: string; }
+interface MenuGroup {
+  label: string;
+  links: { label: string; path: string }[];
+}
+
 @Component({
   selector: 'wayhunter-admin-shell',
   standalone: true,
   imports: [RouterLink, RouterLinkActive, RouterOutlet],
-  template: `
-    <div class="admin-shell">
-      <aside class="sidebar">
-        <h1>WAYHUNTER</h1>
-        <p class="eyebrow">Local scaffold preview</p>
-        <nav aria-label="Admin modules">
-          @for (entry of links; track entry.path) {
-            <a [routerLink]="entry.path" routerLinkActive="active">
-              <span>{{ entry.label }}</span><small>{{ entry.owner }}</small>
-            </a>
-          }
-        </nav>
-      </aside>
-      <main class="main-area">
-        <p class="warning-strip">Development preview only · No real admin access, user data or approvals</p>
-        <router-outlet />
-      </main>
-    </div>
-  `,
+  templateUrl: './admin-shell.html',
+  styleUrl: './admin-shell.scss',
 })
 export class AdminShell {
-  readonly links: MenuLink[] = [
-    { label: 'Dashboard', path: 'dashboard', owner: 'M7' },
-    { label: 'Admin Authentication', path: 'authentication', owner: 'M1' },
-    { label: 'Users', path: 'users', owner: 'M1' },
-    { label: 'Hunter Verification', path: 'hunter-verification', owner: 'M4' },
-    { label: 'Advertisements', path: 'advertisements', owner: 'M7' },
-    { label: 'Places', path: 'places', owner: 'M4' },
-    { label: 'Trips & Routes', path: 'trips-historical-routes', owner: 'M2' },
-    { label: 'Hazards', path: 'hazards', owner: 'M3' },
-    { label: 'Group Trips', path: 'group-trips', owner: 'M3' },
-    { label: 'Games', path: 'games', owner: 'M5' },
-    { label: 'Coins & Rewards', path: 'coins-rewards', owner: 'M6' },
-    { label: 'Merchants & Inventory', path: 'merchants-voucher-inventory', owner: 'M6' },
-    { label: 'Redemptions', path: 'redemptions-settlements', owner: 'M6' },
-    { label: 'Campaigns', path: 'campaigns', owner: 'M7' },
-    { label: 'Reports & Analytics', path: 'reports-analytics', owner: 'M7' },
-    { label: 'Notifications', path: 'notifications', owner: 'M3' },
-    { label: 'Settings & Audit', path: 'settings-security-audit', owner: 'M1' },
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+
+  protected readonly groups: MenuGroup[] = [
+    { label: 'Workspace', links: [
+      { label: 'Dashboard', path: 'dashboard' },
+      { label: 'Reports & Analytics', path: 'reports-analytics' },
+    ] },
+    { label: 'Community & Safety', links: [
+      { label: 'Users', path: 'users' },
+      { label: 'Hunter Verification', path: 'hunter-verification' },
+      { label: 'Places', path: 'places' },
+      { label: 'Trips & Routes', path: 'trips-historical-routes' },
+      { label: 'Group Trips', path: 'group-trips' },
+      { label: 'Hazards', path: 'hazards' },
+      { label: 'Games', path: 'games' },
+    ] },
+    { label: 'Rewards & Vouchers', links: [
+      { label: 'Coins & Rewards', path: 'coins-rewards' },
+      { label: 'Merchants & Inventory', path: 'merchants-voucher-inventory' },
+      { label: 'Redemptions', path: 'redemptions-settlements' },
+    ] },
+    { label: 'Growth & Outreach', links: [
+      { label: 'Advertisements', path: 'advertisements' },
+      { label: 'Campaigns', path: 'campaigns' },
+      { label: 'Notifications', path: 'notifications' },
+    ] },
+    { label: 'Administration', links: [
+      { label: 'Admin Authentication', path: 'authentication' },
+      { label: 'Settings & Audit', path: 'settings-security-audit' },
+    ] },
   ];
+
+  protected readonly collapsed = signal(false);
+  protected readonly drawerOpen = signal(false);
+  protected readonly title = signal(this.pageTitle());
+  protected readonly preview = this.route.snapshot.routeConfig?.path === 'preview';
+
+  constructor() {
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd),
+      takeUntilDestroyed(),
+    ).subscribe(() => {
+      this.title.set(this.pageTitle());
+      this.drawerOpen.set(false);
+    });
+  }
+
+  protected closeDrawer(toggle: HTMLButtonElement): void {
+    this.drawerOpen.set(false);
+    toggle.focus();
+  }
+
+  private pageTitle(): string {
+    const path = this.route.snapshot.firstChild?.routeConfig?.path;
+    return this.groups.flatMap(group => group.links).find(link => link.path === path)?.label ?? 'Dashboard';
+  }
 }

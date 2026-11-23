@@ -1,0 +1,47 @@
+﻿<div class="admin-shell" [class.collapsed]="collapsed()" [class.drawer-open]="drawerOpen()"
+     (keydown.escape)="drawerOpen() && closeDrawer(mobileToggle)">
+  <header class="topbar">
+    <button type="button" class="navigation-toggle desktop-toggle" aria-controls="admin-sidebar"
+            [attr.aria-expanded]="!collapsed()" (click)="collapsed.update(value => !value)">
+      <span class="menu-icon" aria-hidden="true"></span>
+      <span class="visually-hidden">{{ collapsed() ? 'Expand navigation' : 'Collapse navigation' }}</span>
+    </button>
+    <button #mobileToggle type="button" class="navigation-toggle mobile-toggle" aria-controls="admin-sidebar"
+            [attr.aria-expanded]="drawerOpen()" (click)="drawerOpen.update(value => !value)">
+      <span class="menu-icon" aria-hidden="true"></span>
+      <span class="visually-hidden">{{ drawerOpen() ? 'Close navigation' : 'Open navigation' }}</span>
+    </button>
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">W</span>
+      <span>WayHunter <small>Admin</small></span>
+    </div>
+    @if (preview) {
+      <span class="preview-label">Development preview</span>
+    }
+  </header>
+
+  <aside class="sidebar" id="admin-sidebar">
+    <nav aria-label="Admin modules">
+      @for (group of groups; track group.label) {
+        <div class="nav-group">
+          <h2>{{ group.label }}</h2>
+          @for (link of group.links; track link.path) {
+            <a [routerLink]="link.path" routerLinkActive="active" ariaCurrentWhenActive="page"
+               (click)="drawerOpen() && closeDrawer(mobileToggle)">{{ link.label }}</a>
+          }
+        </div>
+      }
+    </nav>
+  </aside>
+
+  @if (drawerOpen()) {
+    <div class="scrim" aria-hidden="true" (click)="closeDrawer(mobileToggle)"></div>
+  }
+
+  <main class="main-area">
+    <div class="page-content">
+      <h1>{{ title() }}</h1>
+      <router-outlet />
+    </div>
+  </main>
+</div>
