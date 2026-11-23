@@ -4,12 +4,20 @@ import { Component } from '@angular/core';
   standalone: true,
   selector: 'wayhunter-authentication-page',
   template: `
-    <section class="pane">
-      <p class="eyebrow">ADM-01 · M1</p>
-      <h2>Admin Authentication</h2>
-      <p>Feature placeholder only. M1 will implement UI, Backend API, SQL models and tests.</p>
-      <p>No live records, permissions, approvals or transactions exist in this starter.</p>
+    <section class="pane" aria-labelledby="authentication-title">
+      <h2 id="authentication-title">Admin Authentication</h2>
+      <p>Admin sign-in is unavailable until the server can verify Admin sessions and permissions.</p>
+      <dl>
+        <div><dt>Sign-in and account recovery</dt><dd>Unavailable</dd></div>
+        <div><dt>Session and permission verification</dt><dd>Unavailable</dd></div>
+        <div><dt>Sign-in audit history</dt><dd>Unavailable</dd></div>
+      </dl>
     </section>
+  `,
+  styles: `
+    dl div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .4rem 1rem; padding: .75rem 0; border-top: 1px solid var(--line); }
+    dt { font-weight: 600; }
+    dd { margin: 0; color: var(--muted); }
   `,
 })
 export class AdminAuthenticationPage {}
