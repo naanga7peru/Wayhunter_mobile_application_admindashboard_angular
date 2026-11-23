@@ -1,0 +1,88 @@
+﻿<div class="dashboard">
+  <header class="intro">
+    <div>
+      <wh-status-badge tone="warning" label="Demo / Sample Data" />
+      <h2>Welcome to WayHunter</h2>
+      <p>Track travel activity, campaign performance, and the reviews that need your attention.</p>
+    </div>
+    <div class="range-panel">
+      <wh-filter-select label="Sample time range" [options]="ranges" [value]="range()"
+                        (valueChange)="selectRange($event)" />
+      <p role="status">{{ view().period }}</p>
+    </div>
+  </header>
+
+  <section aria-labelledby="overview-heading">
+    <h2 id="overview-heading">KPI overview</h2>
+    <div class="metrics">
+      @for (metric of view().metrics; track metric.label; let first = $first) {
+        <wh-card>
+          <h3>{{ metric.label }}</h3>
+          <p class="metric-value">{{ metric.value | number }}</p>
+          <p class="metric-detail">{{ metric.detail }}</p>
+          <p class="trend">
+            <strong>
+              @if (metric.change > 0) { + }
+              {{ metric.change | number }}
+            </strong>
+            {{ first ? 'new accounts in period' : 'vs. previous period' }}
+          </p>
+        </wh-card>
+      }
+    </div>
+  </section>
+
+  <section aria-labelledby="analytics-heading">
+    <h2 id="analytics-heading">Analytics overview</h2>
+    <div class="charts">
+      <wayhunter-dashboard-chart heading="Trips over time" unit="trips" kind="bars" [points]="view().points" />
+      <wayhunter-dashboard-chart heading="User growth" unit="new accounts" kind="line" [points]="view().points" />
+    </div>
+  </section>
+
+  <div class="operations">
+    <wh-card heading="Recent activities">
+      <ul class="activity-summary" aria-label="Activity status counts">
+        @for (badge of activitySummary(); track badge.status) {
+          <li><wh-status-badge [tone]="badge.tone" [label]="badge.label" /></li>
+        }
+      </ul>
+      <wh-data-table caption="Sample administrative events" [rows]="view().activities"
+                     [columns]="activityColumns" [rowKey]="activityKey" />
+    </wh-card>
+
+    <wh-card heading="Pending actions">
+      <p class="muted">Sample reviews opened in this period.</p>
+      <ul class="review-list">
+        <li>
+          <a routerLink="../hunter-verification">
+            <span>Hunter verification</span>
+            <wh-status-badge tone="warning" [label]="view().pending.hunters + ' pending'" />
+          </a>
+        </li>
+        <li>
+          <a routerLink="../hazards">
+            <span>Reported hazards</span>
+            <wh-status-badge tone="warning" [label]="view().pending.hazards + ' pending'" />
+          </a>
+        </li>
+        <li>
+          <a routerLink="../redemptions-settlements">
+            <span>Voucher redemptions</span>
+            <wh-status-badge tone="warning" [label]="view().pending.redemptions + ' pending'" />
+          </a>
+        </li>
+      </ul>
+    </wh-card>
+  </div>
+
+  <wh-card heading="Platform health">
+    <div class="diagnostics">
+      <div>
+        <p class="muted">Development diagnostics for the backend availability endpoint.</p>
+        <p class="health-status" role="status">{{ backendStatus() }}</p>
+      </div>
+      <button whButton variant="outline" [loading]="checkingBackend()" (click)="checkBackend()">Check backend /health</button>
+    </div>
+  </wh-card>
+</div>
