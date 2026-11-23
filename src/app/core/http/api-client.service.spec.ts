@@ -61,4 +61,26 @@ describe('ApiClientService', () => {
       message: 'The API could not be reached.',
     });
   });
+
+  it.each([
+    [400, 'Bad Request'],
+    [401, 'Unauthorized'],
+    [404, 'Not Found'],
+    [500, 'Internal Server Error'],
+    [503, 'Service Unavailable'],
+  ] as const)('rejects HTTP %i with a normalized error and no retry', async (status, statusText) => {
+    const result = firstValueFrom(client.getHealth());
+    http.expectOne({ method: 'GET', url: healthUrl }).flush(
+      { message: 'Unstructured backend error' },
+      { status, statusText },
+    );
+
+    await expect(result).rejects.toBeInstanceOf(ApiError);
+    await expect(result).rejects.toMatchObject({
+      status,
+      code: undefined,
+      correlationId: undefined,
+      message: 'The API request failed.',
+    });
+  });
 });
