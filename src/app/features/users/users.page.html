@@ -1,0 +1,89 @@
+<section class="workspace" aria-labelledby="users-title">
+  <header class="hero">
+    <div>
+      <h2 id="users-title">User Management</h2>
+      <p>Review user accounts, check account activity, and manage moderation decisions.</p>
+    </div>
+    <span class="availability">Live integration unavailable</span>
+  </header>
+
+  <section aria-labelledby="users-overview-title">
+    <h3 id="users-overview-title">Account status overview</h3>
+    <ul class="stages" role="list" aria-labelledby="users-overview-title">
+      @for (status of accountStatuses; track status) {
+        <li class="card">{{ status }}</li>
+      }
+    </ul>
+  </section>
+
+  <div class="review-grid">
+    <section class="card panel" aria-labelledby="users-directory-title">
+      <h3 id="users-directory-title">User directory</h3>
+      <p class="directory-state" id="user-search-status" role="status">
+        {{ directoryMessages[directoryState] }}
+      </p>
+      <form aria-labelledby="users-directory-title" aria-describedby="user-search-status"
+            (submit)="$event.preventDefault()">
+        <fieldset disabled>
+          <div>
+            <label for="user-search-id">User ID</label>
+            <input id="user-search-id" type="search" autocomplete="off" required>
+          </div>
+          <div>
+            <label for="user-search-status-filter">Account status</label>
+            <select id="user-search-status-filter"><option>Status filter unavailable</option></select>
+          </div>
+          <button type="submit">Search</button>
+        </fieldset>
+      </form>
+
+      <div class="table-scroll" role="region" aria-label="User directory table" tabindex="0">
+        <table aria-labelledby="users-directory-title" aria-describedby="user-search-status">
+          <thead>
+            <tr>
+              <th scope="col">User reference</th>
+              <th scope="col">Display name</th>
+              <th scope="col">Account status</th>
+              <th scope="col">Registration date</th>
+              <th scope="col">Details</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card panel" aria-labelledby="user-details-title">
+      <h3 id="user-details-title">User details</h3>
+      <div class="detail">
+        <h4>Account overview</h4>
+        <p>User references and registration dates require authorized directory access.</p>
+      </div>
+      <div class="detail">
+        <h4>Basic profile information</h4>
+        <p>Profile information is unavailable.</p>
+      </div>
+      <div class="detail">
+        <h4>Account status</h4>
+        <p>Account status is unavailable.</p>
+      </div>
+      <div class="detail">
+        <h4>Activity overview</h4>
+        <p>Account activity requires authorized access to user details.</p>
+      </div>
+      <div class="detail">
+        <h4>Moderation history</h4>
+        <p>Moderation history requires access to protected audit records.</p>
+      </div>
+      <div class="detail">
+        <h4 id="user-actions-title">Account actions</h4>
+        <p id="user-actions-status">Warnings, suspensions, and reactivations require authorized Admin APIs and an audit trail.</p>
+        <div class="actions" role="group" aria-labelledby="user-actions-title" aria-describedby="user-actions-status">
+          <button type="button" disabled>Issue warning</button>
+          <button type="button" disabled>Suspend account</button>
+          <button type="button" disabled>Reactivate account</button>
+        </div>
+      </div>
+    </section>
+  </div>
+</section>
