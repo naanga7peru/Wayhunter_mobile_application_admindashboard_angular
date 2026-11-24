@@ -28,9 +28,4 @@ export interface DashboardView {
   readonly metrics: readonly DashboardMetric[];
   readonly points: readonly DashboardPoint[];
   readonly activities: readonly DashboardActivity[];
-  readonly pending: {
-    readonly hunters: number;
-    readonly hazards: number;
-    readonly redemptions: number;
-  };
 }
