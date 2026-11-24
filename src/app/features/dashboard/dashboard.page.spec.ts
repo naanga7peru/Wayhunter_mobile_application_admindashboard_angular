@@ -95,6 +95,58 @@ describe('ADM-02 Dashboard', () => {
     expect(checks).toHaveLength(0);
   });
 
+  it.each(['7', '30', '90'] as const)('reconciles every district to the %s-day sample trip KPI', async range => {
+    const { harness, page } = await openDashboard();
+    const time = page.querySelector<HTMLSelectElement>('.range-panel select')!;
+    time.value = range;
+    time.dispatchEvent(new Event('change'));
+    harness.detectChanges();
+
+    const card = page.querySelector('[aria-labelledby="district-activity-heading"]')!;
+    const rows = Array.from(card.querySelectorAll<HTMLTableRowElement>('tbody tr'));
+    const aggregates = getDashboardDemo(range).districtActivity;
+    expect(card.querySelector('wh-status-badge')?.textContent?.trim()).toBe('Demo / Sample Data');
+    expect(card.querySelector('select')?.value).toBe('');
+    expect(card.querySelector('caption')?.textContent).toContain(getDashboardDemo(range).period);
+    expect(rows.map(row => row.querySelector('th[scope="row"]')?.textContent?.trim())).toEqual(['Galle', 'Kandy', 'Matale']);
+    const counts = rows.map(row => {
+      expect(row.cells).toHaveLength(2);
+      expect(row.querySelector('.district-track')?.getAttribute('aria-hidden')).toBe('true');
+      return Number(row.cells[1].textContent?.replaceAll(',', '').trim());
+    });
+    expect(counts).toEqual(aggregates.map(row => row.trips));
+    expect(aggregates.map(Object.keys)).toEqual(rows.map(() => ['district', 'trips']));
+    expect(counts.reduce((sum, count) => sum + count, 0))
+      .toBe(Number(page.querySelectorAll('.metric-value')[1].textContent?.replaceAll(',', '').trim()));
+  });
+
+  it('combines district and time filters and resets district without changing overall analytics', async () => {
+    const { harness, page } = await openDashboard();
+    const card = page.querySelector('[aria-labelledby="district-activity-heading"]')!;
+    const district = card.querySelector('select')!;
+    const time = page.querySelector<HTMLSelectElement>('.range-panel select')!;
+    const select = (control: HTMLSelectElement, value: string) => {
+      control.value = value;
+      control.dispatchEvent(new Event('change'));
+      harness.detectChanges();
+    };
+    const overall = () => [page.querySelector('.metrics')?.textContent, page.querySelector('.charts')?.innerHTML];
+    const initial = overall();
+    select(district, 'Kandy');
+    expect(overall()).toEqual(initial);
+    expect(card.querySelectorAll('tbody tr')).toHaveLength(1);
+    expect(card.querySelector('tbody th')?.textContent?.trim()).toBe('Kandy');
+    expect(card.textContent).toContain('subset of the all-district Sample trips total');
+    select(time, '30');
+    expect(district.value).toBe('Kandy');
+    const expected = getDashboardDemo('30').districtActivity.find(row => row.district === 'Kandy')!;
+    expect(card.querySelector('tbody td')?.textContent?.trim()).toBe(expected.trips.toLocaleString('en-US'));
+    const monthly = overall();
+    select(district, '');
+    expect(card.querySelectorAll('tbody tr')).toHaveLength(3);
+    expect(overall()).toEqual(monthly);
+  });
+
   it('renders all KPI labels, values and descriptions for the default sample range', async () => {
     const { page } = await openDashboard();
     const metrics = Array.from(page.querySelectorAll('.metrics wh-card'), card => ({

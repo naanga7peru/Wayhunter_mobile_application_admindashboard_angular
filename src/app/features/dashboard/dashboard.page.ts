@@ -32,6 +32,17 @@ export class DashboardPage {
   private readonly destroyRef = inject(DestroyRef);
   protected readonly range = signal<DashboardRange>('7');
   protected readonly view = computed(() => getDashboardDemo(this.range()));
+  protected readonly district = signal('');
+  protected readonly districts = computed<readonly FilterOption[]>(() => [
+    { value: '', label: 'All districts' },
+    ...this.view().districtActivity.map(({ district }) => ({ value: district, label: district })),
+  ]);
+  protected readonly visibleDistrictActivity = computed(() =>
+    this.view().districtActivity.filter(row => !this.district() || row.district === this.district()),
+  );
+  protected readonly districtScale = computed(() =>
+    Math.max(1, ...this.view().districtActivity.map(row => row.trips)),
+  );
   protected readonly checkingBackend = signal(false);
   protected readonly backendStatus = signal('Not checked');
 
