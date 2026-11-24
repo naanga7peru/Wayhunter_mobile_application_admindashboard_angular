@@ -1,7 +1,7 @@
 ﻿import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { NavigationEnd, provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
-import { Subject } from 'rxjs';
+import { filter, firstValueFrom, Subject } from 'rxjs';
 import { routes } from '../../app.routes';
 import { ApiClientService, HealthResponse } from '../../core/http/api-client.service';
 import { getDashboardDemo } from './data-access/dashboard-demo';
@@ -77,6 +77,56 @@ describe('ADM-02 Dashboard', () => {
     harness.detectChanges();
     expect(readView().eventCount).toBe(8);
     expect(checks).toHaveLength(0);
+  });
+
+  it('renders all KPI labels, values and descriptions for the default sample range', async () => {
+    const { page } = await openDashboard();
+    const metrics = Array.from(page.querySelectorAll('.metrics wh-card'), card => ({
+      label: card.querySelector('h3')?.textContent?.trim(),
+      value: card.querySelector('.metric-value')?.textContent?.trim(),
+      detail: card.querySelector('.metric-detail')?.textContent?.trim(),
+    }));
+
+    expect(metrics).toEqual(getDashboardDemo('7').metrics.map(({ label, value, detail }) => ({
+      label, value: new Intl.NumberFormat('en-US').format(value), detail,
+    })));
+  });
+
+  it('renders both plots with labelled disclosures for their sample data', async () => {
+    const { page } = await openDashboard();
+    const charts = page.querySelectorAll('wayhunter-dashboard-chart');
+    expect(charts).toHaveLength(2);
+    expect(charts[0].querySelectorAll('.bars span')).toHaveLength(7);
+    expect(charts[1].querySelector('svg polyline')?.getAttribute('points')?.split(' ')).toHaveLength(7);
+
+    const disclosures = Array.from(page.querySelectorAll<HTMLDetailsElement>('.charts details'));
+    expect(disclosures.map(details => details.querySelector('summary')?.textContent?.trim())).toEqual([
+      'View trips chart data',
+      'View new accounts chart data',
+    ]);
+    for (const details of disclosures) {
+      expect(details.open).toBe(false);
+      details.querySelector('summary')!.click();
+      expect(details.open).toBe(true);
+      expect(details.querySelectorAll('tbody tr')).toHaveLength(7);
+      details.querySelector('summary')!.click();
+      expect(details.open).toBe(false);
+    }
+  });
+
+  it.each([
+    ['Hunter verification', '/preview/hunter-verification'],
+    ['Reported hazards', '/preview/hazards'],
+    ['Voucher redemptions', '/preview/redemptions-settlements'],
+  ])('opens the %s queue when its shortcut is clicked', async (label, url) => {
+    const { page } = await openDashboard();
+    const router = TestBed.inject(Router);
+    const link = Array.from(page.querySelectorAll<HTMLAnchorElement>('.review-list a'))
+      .find(anchor => anchor.querySelector('span')?.textContent === label)!;
+    const navigated = firstValueFrom(router.events.pipe(filter(event => event instanceof NavigationEnd)));
+
+    link.click();
+    expect((await navigated).urlAfterRedirects).toBe(url);
   });
 
   it('handles a failed health check and retries without altering the sample view', async () => {
