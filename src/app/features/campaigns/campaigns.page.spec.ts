@@ -97,6 +97,96 @@ describe('ADM-14 Campaigns Management', () => {
     expect(Array.from(page.querySelectorAll('button')).some(el => /^(approve|reject|publish)$/i.test(el.textContent!.trim()))).toBe(false);
   });
 
+  it('prefills the editor and keeps saved demo drafts isolated from inventory and other records', async () => {
+    const { harness, page, button, change } = await openPage();
+    const click = (label: string) => {
+      Array.from(page.querySelectorAll('button')).find(element => element.textContent?.trim() === label)!.click();
+      harness.detectChanges();
+    };
+    const field = (name: string) => page.querySelector<HTMLInputElement | HTMLSelectElement>(
+      '[formControlName="' + name + '"]',
+    )!;
+    const preview = () => page.querySelector('.preview')?.textContent;
+    button('View details for CMP-201').click();
+    harness.detectChanges();
+    click('Edit demo campaign');
+    expect(document.activeElement?.id).toBe('campaign-editor-title');
+    expect(field('title').value).toBe('Ridge Trail Spotlight');
+    expect(field('contentId').value).toBe('CMP-201');
+    expect(field('budgetCoins').value).toBe('5000');
+    change(field('title'), 'Demo draft title');
+    change(field('sponsor'), 'Demo Coast Collective');
+    change(field('category'), 'District pass');
+    expect(field('contentId').value).toBe('');
+    change(field('contentId'), 'CMP-202');
+    change(field('start'), '2026-12-01');
+    change(field('end'), '2026-12-25');
+    change(field('audience'), 'Travelers exploring Galle');
+    change(field('district'), '');
+    change(field('budgetCoins'), '0');
+    for (const text of ['Demo draft title', 'Coastal Discovery Pass', '1 Dec 2026', '25 Dec 2026',
+      'Travelers exploring Galle', 'All districts', '0 Coins', 'Sponsored by Demo Coast Collective']) {
+      expect(preview()).toContain(text);
+    }
+    click('Save demo draft');
+    expect(page.querySelector('#campaign-editor')).toBeNull();
+    expect(document.activeElement?.textContent).toBe('Edit demo campaign');
+    expect(preview()).toContain('Demo draft title');
+    expect(page.querySelector('table')?.textContent).toContain('Ridge Trail Spotlight');
+    button('View details for CMP-202').click();
+    harness.detectChanges();
+    expect(preview()).not.toContain('Demo draft title');
+    button('View details for CMP-201').click();
+    harness.detectChanges();
+    click('Edit demo campaign');
+    expect(field('title').value).toBe('Demo draft title');
+    change(field('title'), 'Discarded title');
+    click('Discard changes');
+    expect(preview()).toContain('Demo draft title');
+    await harness.navigateByUrl('/preview/dashboard');
+    await harness.navigateByUrl('/preview/campaigns');
+    await harness.fixture.whenStable();
+    harness.detectChanges();
+    harness.routeNativeElement!.querySelector<HTMLButtonElement>('button[aria-label="View details for CMP-201"]')!.click();
+    harness.detectChanges();
+    expect(harness.routeNativeElement!.querySelector('.preview')?.textContent).not.toContain('Demo draft title');
+  });
+
+  it('rejects missing fields, invalid date windows and invalid Coins budgets', async () => {
+    const { harness, page, button, change } = await openPage();
+    button('View details for CMP-201').click();
+    harness.detectChanges();
+    Array.from(page.querySelectorAll('button')).find(element => element.textContent?.trim() === 'Edit demo campaign')!.click();
+    harness.detectChanges();
+    const field = (name: string) => page.querySelector<HTMLInputElement>('[formControlName="' + name + '"]')!;
+    const submit = () => {
+      page.querySelector<HTMLButtonElement>('#campaign-editor button[type="submit"]')!.click();
+      harness.detectChanges();
+    };
+    change(field('title'), '   ');
+    change(field('start'), '');
+    change(field('end'), '');
+    change(field('budgetCoins'), '');
+    submit();
+    for (const name of ['title', 'start', 'end', 'budgetCoins']) {
+      expect(field(name).getAttribute('aria-invalid')).toBe('true');
+    }
+    change(field('title'), 'Valid title');
+    change(field('start'), '2026-12-01');
+    for (const date of ['2026-11-30', '2026-12-01']) {
+      change(field('end'), date);
+      expect(page.querySelector('#campaign-end-error')?.textContent).toContain('after the start date');
+    }
+    change(field('end'), '2026-12-02');
+    for (const budget of ['-1', '1.5', '9007199254740992']) {
+      change(field('budgetCoins'), budget);
+      submit();
+      expect(field('budgetCoins').getAttribute('aria-invalid')).toBe('true');
+    }
+    change(field('budgetCoins'), '1');
+    expect(page.querySelector('#campaign-editor [role="alert"]')).toBeNull();
+  });
+
   it('announces loading, retries a failure, and distinguishes a genuinely empty inventory', async () => {
     let rejectFirstLoad!: (error: Error) => void;
     const firstLoad = new Promise<CampaignsSnapshot>((_, reject) => { rejectFirstLoad = reject; });

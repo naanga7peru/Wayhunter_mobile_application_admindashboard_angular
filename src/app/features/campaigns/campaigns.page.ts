@@ -3,6 +3,8 @@ import {
   afterNextRender, ChangeDetectionStrategy, Component, computed, ElementRef, inject, Injector,
   OnInit, signal, viewChild,
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { UiButton } from '../../shared/ui/button';
 import { UiCard } from '../../shared/ui/card';
 import { TableColumn, UiDataTable } from '../../shared/ui/data-table';
@@ -18,6 +20,24 @@ import {
 type ViewState =
   | { readonly kind: 'loading' | 'error' }
   | { readonly kind: 'ready'; readonly snapshot: CampaignsSnapshot };
+
+type CampaignDraft = Pick<Campaign, 'title' | 'sponsor' | 'audience' | 'district' | 'start' | 'end'> & {
+  category: string;
+  contentId: string;
+  budgetCoins: number | null;
+};
+
+function draftFrom(campaign: Campaign): CampaignDraft {
+  const { title, sponsor, category, audience, district, start, end, budgetCoins } = campaign;
+  return { title, sponsor, category, contentId: campaign.id, audience, district, start, end, budgetCoins };
+}
+
+function utcDate(value: string | undefined): string | null {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const iso = value + 'T00:00:00Z';
+  const date = new Date(iso);
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value ? iso : null;
+}
 
 const overviewCards = [
   { label: 'Total campaigns', tone: 'info' },
@@ -46,7 +66,7 @@ function scheduleWindow(campaign: Campaign, asOf: string) {
   selector: 'wayhunter-campaigns-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [DatePipe, DecimalPipe, UiButton, UiCard, UiDataTable, UiEmptyState, UiErrorState,
-    UiFilterSelect, UiLoadingState, UiSearchInput, UiStatusBadge],
+    UiFilterSelect, UiLoadingState, UiSearchInput, UiStatusBadge, ReactiveFormsModule],
   templateUrl: './campaigns.page.html',
   styleUrl: './campaigns.page.scss',
 })
@@ -55,6 +75,8 @@ export class CampaignsPage implements OnInit {
   private readonly injector = inject(Injector);
   private readonly detailsHeading = viewChild<ElementRef<HTMLElement>>('detailsHeading');
   private readonly results = viewChild<ElementRef<HTMLElement>>('results');
+  private readonly editorHeading = viewChild<ElementRef<HTMLElement>>('editorHeading');
+  private readonly editButton = viewChild('editButton', { read: ElementRef<HTMLButtonElement> });
   private detailsTrigger?: HTMLElement;
 
   protected readonly state = signal<ViewState>({ kind: 'loading' });
@@ -63,6 +85,28 @@ export class CampaignsPage implements OnInit {
   protected readonly category = signal('');
   protected readonly dateWindow = signal('');
   protected readonly selected = signal<Campaign | null>(null);
+  protected readonly editing = signal(false);
+  protected readonly submitted = signal(false);
+  protected readonly maxBudget = Number.MAX_SAFE_INTEGER;
+  private readonly savedDrafts = signal<ReadonlyMap<string, CampaignDraft>>(new Map());
+  private readonly fb = inject(FormBuilder).nonNullable;
+  protected readonly editor = this.fb.group({
+    title: ['', [Validators.required, Validators.pattern(/.*\S.*/)]],
+    sponsor: ['', Validators.required],
+    category: ['', Validators.required],
+    contentId: ['', Validators.required],
+    start: ['', [Validators.required, ({ value }) => utcDate(value) ? null : { utcDate: true }]],
+    end: ['', [Validators.required, ({ value }) => utcDate(value) ? null : { utcDate: true }]],
+    audience: ['', Validators.required],
+    district: [''],
+    budgetCoins: this.fb.control<number | null>(null, [
+      Validators.required,
+      ({ value }) => value === null || (Number.isSafeInteger(value) && value >= 0) ? null : { wholeCoins: true },
+    ]),
+  }, {
+    validators: ({ value }) => value.start && value.end && value.end <= value.start ? { dateOrder: true } : null,
+  });
+  private readonly editorValue = toSignal(this.editor.valueChanges);
   protected readonly ctr = clickThroughRate;
   protected readonly windowLabel = scheduleWindow;
   protected readonly tones: Record<Campaign['status'], StatusTone> = {
@@ -78,6 +122,22 @@ export class CampaignsPage implements OnInit {
     return state.kind === 'ready' ? state.snapshot : null;
   });
   protected readonly campaigns = computed(() => this.snapshot()?.campaigns ?? []);
+  protected readonly campaignTypes = campaignCategories;
+  protected readonly sponsors = computed(() => [...new Set(this.campaigns().map(campaign => campaign.sponsor))]);
+  protected readonly audiences = computed(() => [...new Set(this.campaigns().map(campaign => campaign.audience))]);
+  protected readonly districts = computed(() => [...new Set(this.campaigns().map(campaign => campaign.district))]);
+  protected readonly contentOptions = computed(() =>
+    this.campaigns().filter(campaign => campaign.category === this.editorValue()?.category),
+  );
+  protected readonly savedDraft = computed(() => this.savedDrafts().get(this.selected()?.id ?? ''));
+  protected readonly preview = computed(() => {
+    const campaign = this.selected();
+    if (!campaign) return null;
+    const draft = this.editing() ? this.editorValue() : this.savedDraft() ?? draftFrom(campaign);
+    if (!draft) return null;
+    const content = this.campaigns().find(item => item.id === draft.contentId && item.category === draft.category);
+    return { ...draft, content, startUtc: utcDate(draft.start), endUtc: utcDate(draft.end) };
+  });
   protected readonly overview = computed(() => overviewCards.map(card => ({
     ...card,
     count: card.status
@@ -138,14 +198,42 @@ export class CampaignsPage implements OnInit {
   }
 
   protected showDetails(campaign: Campaign, event: MouseEvent): void {
+    this.editing.set(false);
     this.detailsTrigger = event.currentTarget instanceof HTMLButtonElement ? event.currentTarget : undefined;
     this.selected.set(campaign);
     afterNextRender({ write: () => this.detailsHeading()?.nativeElement.focus() }, { injector: this.injector });
   }
 
   protected closeDetails(): void {
+    this.editing.set(false);
     this.selected.set(null);
     (this.detailsTrigger?.isConnected ? this.detailsTrigger : this.results()?.nativeElement)?.focus();
     this.detailsTrigger = undefined;
+  }
+
+  protected editCampaign(campaign: Campaign): void {
+    if (!this.editing()) {
+      this.editor.reset(this.savedDraft() ?? draftFrom(campaign));
+      this.submitted.set(false);
+      this.editing.set(true);
+    }
+    afterNextRender({ write: () => this.editorHeading()?.nativeElement.focus() }, { injector: this.injector });
+  }
+
+  protected changeCampaignType(): void {
+    this.editor.controls.contentId.reset('');
+  }
+
+  protected saveDraft(campaign: Campaign): void {
+    this.submitted.set(true);
+    if (this.editor.invalid) return;
+    const draft = this.editor.getRawValue();
+    this.savedDrafts.update(drafts => new Map(drafts).set(campaign.id, { ...draft, title: draft.title.trim() }));
+    this.closeEditor();
+  }
+
+  protected closeEditor(): void {
+    this.editing.set(false);
+    this.editButton()?.nativeElement.focus();
   }
 }
