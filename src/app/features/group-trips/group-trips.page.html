@@ -1,0 +1,97 @@
+<section class="workspace" aria-labelledby="group-trips-title">
+  <header class="hero">
+    <div>
+      <h2 id="group-trips-title">Group Trip Management</h2>
+      <p>Monitor group trips and review membership, invitations, and safety sessions.</p>
+    </div>
+    <span class="availability">Live integration unavailable</span>
+  </header>
+
+  <section aria-labelledby="group-trips-overview">
+    <h3 id="group-trips-overview">Management overview</h3>
+    <ul class="stages" role="list" aria-labelledby="group-trips-overview">
+      @for (area of overviewAreas; track area) {
+        <li class="card">{{ area }}</li>
+      }
+    </ul>
+  </section>
+
+  <div class="review-grid">
+    <section class="card panel" aria-labelledby="group-trips-list">
+      <h3 id="group-trips-list">Group trip directory</h3>
+      <p class="directory-state" id="group-trips-availability" role="status">{{ directoryMessages[directoryState] }}</p>
+      <form aria-labelledby="group-trips-list" aria-describedby="group-trips-availability"
+            (submit)="$event.preventDefault()">
+        <fieldset disabled>
+          <div>
+            <label for="group-trips-query">Group trip reference</label>
+            <input id="group-trips-query" type="search" autocomplete="off">
+          </div>
+          <div>
+            <label for="group-trips-status">Group trip status</label>
+            <select id="group-trips-status"><option>Status filter unavailable</option></select>
+          </div>
+          <button type="submit">Search</button>
+        </fieldset>
+      </form>
+
+      <div class="table-scroll" role="region" aria-label="Group trips table" tabindex="0">
+        <table aria-labelledby="group-trips-list" aria-describedby="group-trips-availability">
+          <thead>
+            <tr>
+              <th scope="col">Group trip reference</th>
+              <th scope="col">Trip status</th>
+              <th scope="col">Organizer</th>
+              <th scope="col">Membership</th>
+              <th scope="col">Safety session availability</th>
+              <th scope="col">Details</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card panel" aria-labelledby="group-trip-details">
+      <h3 id="group-trip-details">Group trip details</h3>
+      <div class="detail">
+        <h4>Group trip overview</h4>
+        <p>Group trip references require an authorized Admin directory.</p>
+      </div>
+      <div class="detail">
+        <h4>Organizer information</h4>
+        <p>Organizer information is unavailable.</p>
+      </div>
+      <div class="detail">
+        <h4>Membership overview</h4>
+        <p>Membership information is unavailable.</p>
+      </div>
+      <div class="detail">
+        <h4>Member participation details</h4>
+        <p>Participant information requires authorized access. GPS sharing requires separate member consent.</p>
+      </div>
+      <div class="detail">
+        <h4>Invitation history</h4>
+        <p>Invitation history is unavailable.</p>
+      </div>
+      <div class="detail">
+        <h4>Trip status and timing</h4>
+        <p>Trip status and timing require authorized access to group trip details.</p>
+      </div>
+      <div class="detail">
+        <h4>Group activity history</h4>
+        <p>Group activity history is unavailable.</p>
+      </div>
+      <section class="detail" aria-labelledby="group-safety-title">
+        <h4 id="group-safety-title">Safety session information</h4>
+        <p id="group-safety-status">Safety summaries are unavailable without a scoped Admin grant for the specific trip and session.</p>
+        <ul class="summary-fields" aria-describedby="group-safety-status">
+          @for (field of safetySummaryFields; track field) {
+            <li>{{ field }}</li>
+          }
+        </ul>
+        <button type="button" aria-describedby="group-safety-status" disabled>View safety summary</button>
+      </section>
+    </section>
+  </div>
+</section>
