@@ -17,7 +17,7 @@
   @if (snapshot(); as sample) {
     <section aria-labelledby="campaign-overview">
       <h2 id="campaign-overview">Campaign overview</h2>
-      <p class="muted section-note">Sample snapshot for {{ (sample.asOf + 'T00:00:00Z') | date:'d MMM y':'UTC' }} (UTC).</p>
+      <p class="muted section-note">Sample snapshot for {{ sample.asOf | date:'d MMM y, HH:mm':'UTC' }} UTC.</p>
       <div class="overview">
         @for (card of overview(); track card.label) {
           <wh-card>
@@ -33,9 +33,11 @@
     <wh-card heading="Campaign inventory">
       <div class="filters" role="group" aria-label="Campaign filters">
         <wh-search-input label="Search campaigns" placeholder="ID, title, sponsor or district" [(value)]="search" />
-        <wh-filter-select label="Status" [options]="statusOptions" [(value)]="status" />
+        <wh-filter-select label="Inventory status" [options]="statusOptions" [(value)]="status" />
         <wh-filter-select label="Category" [options]="categoryOptions" [(value)]="category" />
         <wh-filter-select label="Schedule dates" [options]="windowOptions" [(value)]="dateWindow" />
+        <wh-filter-select label="Sponsor" [options]="sponsorOptions()" [(value)]="sponsor" />
+        <wh-filter-select label="Audience" [options]="audienceOptions()" [(value)]="audience" />
         <button whButton variant="outline" (click)="resetFilters()">Reset filters</button>
       </div>
       <p #results class="muted results" role="status" tabindex="-1">{{ filtered().length }} of {{ campaigns().length }} matching sample campaigns</p>
@@ -44,7 +46,8 @@
           <table>
             <thead><tr>
               <th scope="col">Campaign</th><th scope="col">Sponsor</th><th scope="col">Category</th>
-              <th scope="col">District</th><th scope="col">Status</th><th scope="col">Details</th>
+              <th scope="col">District</th><th scope="col">Inventory status</th><th scope="col">Sample stored lifecycle</th>
+              <th scope="col">Schedule window (UTC)</th><th scope="col">Details</th>
             </tr></thead>
             <tbody>
               @for (campaign of filtered(); track campaign.id) {
@@ -52,6 +55,8 @@
                   <th scope="row">{{ campaign.title }} <span class="record-id">{{ campaign.id }}</span></th>
                   <td>{{ campaign.sponsor }}</td><td>{{ campaign.category }}</td><td>{{ campaign.district }}</td>
                   <td><wh-status-badge [label]="campaign.status" [tone]="tones[campaign.status]" /></td>
+                  <td class="stored-lifecycle">{{ campaign.lifecycle }}</td>
+                  <td class="schedule-window">{{ windowLabel(campaign, sample.asOf) }}</td>
                   <td>
                     <button whButton variant="outline" (click)="showDetails(campaign, $event)"
                             [attr.aria-label]="'View details for ' + campaign.id"
@@ -88,7 +93,9 @@
             <div><dt>Sponsor</dt><dd>{{ campaign.sponsor }}</dd></div>
             <div><dt>District</dt><dd>{{ campaign.district }}</dd></div>
             <div><dt>Sample audience</dt><dd>{{ campaign.audience }}</dd></div>
-            <div><dt>Status</dt><dd><wh-status-badge [label]="campaign.status" [tone]="tones[campaign.status]" /></dd></div>
+            <div><dt>Inventory status</dt><dd><wh-status-badge [label]="campaign.status" [tone]="tones[campaign.status]" /></dd></div>
+            <div><dt>Sample stored lifecycle</dt><dd>{{ campaign.lifecycle }}</dd></div>
+            <div><dt>Schedule window (UTC)</dt><dd>{{ windowLabel(campaign, sample.asOf) }}</dd></div>
             <div><dt>Start (UTC)</dt><dd>{{ (campaign.start + 'T00:00:00Z') | date:'d MMM y':'UTC' }}</dd></div>
             <div><dt>End (UTC)</dt><dd>{{ (campaign.end + 'T00:00:00Z') | date:'d MMM y':'UTC' }}</dd></div>
           </dl>
@@ -228,7 +235,7 @@
 
     <div class="sections">
       <wh-card heading="Scheduling overview">
-        <p class="muted section-note">Windows are relative to the sample snapshot. All dates are UTC.</p>
+        <p class="muted section-note">Windows use midnight UTC on each date. Start is included and end is excluded.</p>
         @if (schedule().length) {
           <ul class="records schedule">
             @for (campaign of schedule(); track campaign.id) {
@@ -248,12 +255,20 @@
 
       <div class="sections-stack">
         <wh-card heading="Sample performance">
-          <dl class="performance">
-            <div><dt>Impressions</dt><dd>{{ performance().impressions | number }}</dd></div>
-            <div><dt>Clicks</dt><dd>{{ performance().clicks | number }}</dd></div>
-            <div><dt>CTR</dt><dd>{{ performance().ctr | number:'1.1-2' }}%</dd></div>
-          </dl>
-          <p class="muted">CTR is clicks divided by impressions across the full sample inventory.</p>
+          @if (filtered().length) {
+            <p class="muted section-note">Sample totals for matching campaigns.</p>
+            <dl class="performance">
+              <div><dt>Impressions</dt><dd>{{ performance().impressions | number }}</dd></div>
+              <div><dt>Clicks</dt><dd>{{ performance().clicks | number }}</dd></div>
+              <div><dt>CTR</dt><dd>{{ performance().impressions ? (performance().ctr | number:'1.1-2') + '%' : 'Unavailable' }}</dd></div>
+            </dl>
+            @if (!performance().impressions) {
+              <p class="muted">Matching sample campaigns have zero impressions. CTR is unavailable.</p>
+            }
+          } @else {
+            <p class="muted">No matching campaigns to summarize.</p>
+          }
+          <p class="muted">Actual views, actions, and spend are unavailable.</p>
         </wh-card>
 
         <wh-card heading="Review overview">
