@@ -33,9 +33,10 @@ const defaultRange: Range = 30;
 })
 export class ReportsAnalyticsPage implements OnInit {
   private readonly source = inject(ReportsAnalyticsDemoSource);
+  private exportAttempt = 0;
 
   protected readonly state = signal<State>({ kind: 'loading' });
-  protected readonly exportFeedback = signal<'started' | 'failed' | null>(null);
+  protected readonly exportFeedback = signal<{ outcome: 'started' | 'failed'; attempt: number } | null>(null);
   protected readonly range = signal<Range>(defaultRange);
   protected readonly category = signal<Category>('Overview');
   protected readonly rangeOptions = ranges.map(days => ({ value: String(days), label: 'Last ' + days + ' sample days' }));
@@ -116,6 +117,7 @@ export class ReportsAnalyticsPage implements OnInit {
   protected exportCsv(): void {
     const report = this.view();
     if (!report?.hasData) return;
+    const attempt = ++this.exportAttempt;
     let url: string | undefined;
     let link: HTMLAnchorElement | undefined;
     let started = false;
@@ -128,7 +130,7 @@ export class ReportsAnalyticsPage implements OnInit {
       link.click();
       started = true;
     } catch {
-      this.exportFeedback.set('failed');
+      this.exportFeedback.set({ outcome: 'failed', attempt });
     } finally {
       link?.remove();
       if (url !== undefined) {
@@ -141,6 +143,6 @@ export class ReportsAnalyticsPage implements OnInit {
         }
       }
     }
-    if (started) this.exportFeedback.set('started');
+    if (started) this.exportFeedback.set({ outcome: 'started', attempt });
   }
 }

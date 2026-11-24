@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { vi } from 'vitest';
@@ -6,6 +7,7 @@ import { routes } from '../../app.routes';
 import { csvCell, demoCsv } from './data-access/reports-analytics-csv';
 import { ReportsAnalyticsDemoSource } from './data-access/reports-analytics-demo';
 import { buildReport, changeLabel, ReportsSnapshot, shiftDate } from './models/reports-analytics-view';
+import { ReportsAnalyticsPage } from './reports-analytics.page';
 
 const demo = new ReportsAnalyticsDemoSource();
 const fixture = () => demo.load();
@@ -177,7 +179,7 @@ describe('ADM-15 Reports & Analytics', () => {
     try {
       Array.from(page.querySelectorAll('button')).find(button => button.textContent?.includes('Export Demo CSV'))!.click();
       harness.detectChanges();
-      expect(page.querySelector('.summary-actions + [role="status"]')?.textContent?.trim()).toBe('CSV download started.');
+      expect(page.querySelector('.summary-actions + [role="status"]')?.textContent).toContain('CSV download started.');
       expect(filename).toBe('wayhunter-fictional-demo-report-7d.csv');
       expect(document.querySelector('a[download]')).toBeNull();
       const blob = create.mock.calls[0][0];
@@ -218,8 +220,8 @@ describe('ADM-15 Reports & Analytics', () => {
     };
     try {
       exportCsv();
-      expect(page.querySelector('[role="alert"]')?.textContent?.trim())
-        .toBe('CSV export could not be started. Please try again.');
+      expect(page.querySelector('[role="alert"]')?.textContent)
+        .toContain('CSV export could not be started. Please try again.');
       expect(button('Export Demo CSV').disabled).toBe(false);
       expect(click).toHaveBeenCalledTimes(failure === 'link activation' ? 1 : 0);
       expect(revoke).toHaveBeenCalledTimes(failure === 'link activation' ? 1 : 0);
@@ -227,9 +229,9 @@ describe('ADM-15 Reports & Analytics', () => {
       expect(document.querySelector('a[download]')).toBeNull();
 
       exportCsv();
-      expect(page.querySelector('[role="alert"]')).toBeNull();
+      expect(page.querySelector('[role="alert"]')?.textContent?.trim()).toBe('');
       const status = () => page.querySelector('.summary-actions + [role="status"]')?.textContent?.trim();
-      expect(status()).toBe('CSV download started.');
+      expect(status()).toContain('CSV download started.');
       expect(document.querySelector('a[download]')).toBeNull();
       vi.runOnlyPendingTimers();
       expect(revoke).toHaveBeenCalledTimes(failure === 'link activation' ? 2 : 1);
@@ -254,6 +256,52 @@ describe('ADM-15 Reports & Analytics', () => {
     }
   });
 
+  it.each([
+    ['success', 'success'],
+    ['failure', 'failure'],
+    ['failure', 'success'],
+    ['success', 'failure'],
+  ])('updates its live regions for %s followed by %s', async (first, second) => {
+    const { harness, page } = await openPage();
+    const status = page.querySelector('.summary-actions + [role="status"]')!;
+    const alert = page.querySelector('[role="alert"]')!;
+    const button = Array.from(page.querySelectorAll('button'))
+      .find(candidate => candidate.textContent?.includes('Export Demo CSV'))!;
+    const create = vi.fn(() => 'blob:sample');
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    vi.stubGlobal('URL', class extends URL {
+      static override createObjectURL = create;
+      static override revokeObjectURL = vi.fn();
+    });
+    vi.useFakeTimers();
+    try {
+      const announcements = [first, second].map((outcome, index) => {
+        if (outcome === 'failure') {
+          create.mockImplementationOnce(() => { throw new Error('Download setup failed'); });
+        }
+        button.click();
+        harness.detectChanges();
+        const region = outcome === 'success' ? status : alert;
+        const inactive = outcome === 'success' ? alert : status;
+        const message = outcome === 'success'
+          ? 'CSV download started.'
+          : 'CSV export could not be started. Please try again.';
+        const announcement = region.textContent?.trim();
+        expect(region.getAttribute('aria-atomic')).toBe('true');
+        expect(announcement).toContain(message);
+        expect(announcement).toContain('Attempt ' + (index + 1) + '.');
+        expect(inactive.textContent?.trim()).toBe('');
+        return announcement;
+      });
+      expect(announcements[1]).not.toBe(announcements[0]);
+    } finally {
+      vi.runOnlyPendingTimers();
+      vi.useRealTimers();
+      click.mockRestore();
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('escapes quotes, commas and line breaks and neutralizes formula prefixes', () => {
     expect(csvCell('A, "B"\nC')).toBe('"A, ""B""\nC"');
     for (const value of ['=1+1', '+SUM(A1)', '-2+5', '@name', ' \t=1', '\rplain']) {
@@ -265,12 +313,37 @@ describe('ADM-15 Reports & Analytics', () => {
   it('distinguishes missing filtered records from zero and shows no export for empty reports', async () => {
     const sample = await fixture();
     const outsideWeek = { ...sample, days: sample.days.slice(0, -8) };
-    const { page, date, set } = await openPage(async () => outsideWeek);
+    const { harness, page, date, set, refresh } = await openPage(async () => outsideWeek);
+    const component: ReportsAnalyticsPage = harness.fixture.debugElement
+      .query(By.directive(ReportsAnalyticsPage)).componentInstance;
     set(date, '7');
     expect(page.textContent).toContain('No sample reports are available');
     expect(page.textContent).toContain('No sample chart data');
     expect(page.textContent).not.toContain('Export Demo CSV');
     expect(buildReport(outsideWeek, 7, 'Users').rows[0].current).toBe('Unavailable');
+
+    const create = vi.fn(() => { throw new Error('Download setup failed'); });
+    vi.stubGlobal('URL', class extends URL {
+      static override createObjectURL = create;
+    });
+    try {
+      component['exportCsv']();
+      harness.detectChanges();
+      expect(create).not.toHaveBeenCalled();
+      expect(page.textContent).not.toContain('Attempt ');
+
+      set(date, '30');
+      page.querySelector<HTMLButtonElement>('.summary-actions button')!.click();
+      harness.detectChanges();
+      expect(create).toHaveBeenCalledTimes(1);
+      expect(page.querySelector('[role="alert"]')?.textContent).toContain('Attempt 1.');
+
+      await component['load']();
+      await refresh();
+      expect(page.querySelector('[role="alert"]')?.textContent?.trim()).toBe('');
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it('shows an unavailable comparison when the preceding period has no fixture coverage', async () => {
