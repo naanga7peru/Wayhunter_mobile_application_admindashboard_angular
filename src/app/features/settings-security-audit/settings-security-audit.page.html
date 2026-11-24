@@ -1,0 +1,165 @@
+<section class="workspace" aria-labelledby="settings-title">
+  <header class="hero">
+    <div>
+      <p class="eyebrow">ADM-17 · Administration</p>
+      <h2 id="settings-title">Settings, Security &amp; Audit</h2>
+      <p>Review administrative configuration, access security and accountable activity when protected services are available.</p>
+    </div>
+    <span class="availability" role="status">Backend integration unavailable</span>
+  </header>
+
+  <p class="availability-message" id="settings-availability" role="status" aria-live="polite">
+    <strong>Settings, session management and audit data are unavailable.</strong>
+    No protected Admin contracts are currently available for these operations. This page does not request or change data.
+  </p>
+
+  <section class="overview" aria-labelledby="overview-title">
+    <h3 id="overview-title">Management overview</h3>
+    <ul class="overview-grid" role="list">
+      <li class="card overview-card">
+        <h4>System Settings</h4>
+        <p>Versioned rules, restricted zones and integration status.</p>
+        <span class="state-label">Unavailable</span>
+      </li>
+      <li class="card overview-card">
+        <h4>Access &amp; Security</h4>
+        <p>Administrator account, session security and access controls.</p>
+        <span class="state-label">Unavailable</span>
+      </li>
+      <li class="card overview-card">
+        <h4>Audit History</h4>
+        <p>Protected audit and security activity records.</p>
+        <span class="state-label">Unavailable</span>
+      </li>
+    </ul>
+  </section>
+
+  <div class="content-grid">
+    <div class="column">
+      <section class="card panel" aria-labelledby="system-settings-title">
+        <div class="panel-heading">
+          <div><p class="eyebrow">Configuration</p><h3 id="system-settings-title">System Settings</h3></div>
+          <span class="state-label">Unavailable</span>
+        </div>
+        <p id="system-settings-status" role="status">{{ resourceMessages[settingsState] }} Configuration values are not displayed.</p>
+        <dl class="data-list">
+          <div><dt>Versioned Rules</dt><dd>Unavailable</dd></div>
+          <div><dt>Restricted Zones</dt><dd>Unavailable</dd></div>
+          <div><dt>Integration Status</dt><dd>Unavailable</dd></div>
+        </dl>
+        <p class="supporting-note">Viewing or changing administrative configuration requires a verified protected backend contract.</p>
+      </section>
+
+      <section class="card panel" aria-labelledby="account-security-title">
+        <div class="panel-heading">
+          <div><p class="eyebrow">Administrator account</p><h3 id="account-security-title">Account Security</h3></div>
+          <span class="state-label">Unavailable</span>
+        </div>
+        <p id="account-security-status" role="status">Administrator account information and security state are unavailable. No account identity or credential is shown.</p>
+        <dl class="data-list">
+          <div><dt>Administrator account</dt><dd>Unavailable</dd></div>
+          <div><dt>Account security status</dt><dd>Unavailable</dd></div>
+          <div><dt>Authentication availability</dt><dd>Unavailable</dd></div>
+          <div><dt>Session security</dt><dd>Unavailable</dd></div>
+        </dl>
+      </section>
+
+      <section class="card panel" aria-labelledby="roles-permissions-title">
+        <div class="panel-heading">
+          <div><p class="eyebrow">Access control</p><h3 id="roles-permissions-title">Roles &amp; Permissions</h3></div>
+          <span class="state-label">Unavailable</span>
+        </div>
+        <p id="roles-permissions-status" role="status">Role assignments and permissions require trusted server-side authorization information.</p>
+        <dl class="data-list">
+          <div><dt>Role information</dt><dd>Unavailable</dd></div>
+          <div><dt>Permission overview</dt><dd>Unavailable</dd></div>
+          <div><dt>Access-control availability</dt><dd>Unavailable</dd></div>
+          <div><dt>Authorization requirements</dt><dd>Server verification required</dd></div>
+        </dl>
+      </section>
+    </div>
+
+    <div class="column">
+      <section class="card panel" aria-labelledby="sessions-title">
+        <div class="panel-heading">
+          <div><p class="eyebrow">Authentication</p><h3 id="sessions-title">Admin Sessions</h3></div>
+          <span class="state-label">Unavailable</span>
+        </div>
+        <p id="sessions-status" role="status">{{ resourceMessages[sessionsState] }} A protected Admin session listing is not available.</p>
+        <div class="table-scroll" role="region" aria-label="Admin sessions table" tabindex="0">
+          <table class="sessions-table" aria-labelledby="sessions-title" aria-describedby="sessions-status">
+            <thead><tr>
+              <th scope="col">Session reference</th>
+              <th scope="col">Session state</th>
+              <th scope="col">Last activity</th>
+              <th scope="col">Session details</th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card panel audit-panel" aria-labelledby="audit-title">
+        <div class="panel-heading">
+          <div><p class="eyebrow">Accountability</p><h3 id="audit-title">Audit History</h3></div>
+          <span class="state-label">Unavailable</span>
+        </div>
+        <p id="audit-status" role="status" aria-live="polite">
+          {{ resourceMessages[auditState] }} The actual audit record count is unknown; no events are shown.
+        </p>
+        <form aria-labelledby="audit-title" aria-describedby="audit-status" (submit)="$event.preventDefault()">
+          <fieldset disabled>
+            <legend>Audit search</legend>
+            <div class="filters">
+              <div class="field">
+                <label for="audit-query">Search audit history</label>
+                <input id="audit-query" type="search" autocomplete="off" placeholder="Search unavailable">
+              </div>
+              <div class="field">
+                <label for="audit-event-type">Event type</label>
+                <select id="audit-event-type"><option>Event filtering unavailable</option></select>
+              </div>
+              <button type="submit" aria-describedby="audit-status">Search audit history</button>
+            </div>
+          </fieldset>
+        </form>
+        <div class="table-scroll" role="region" aria-label="Audit log table" tabindex="0">
+          <table class="audit-table" aria-labelledby="audit-title" aria-describedby="audit-status">
+            <thead><tr>
+              <th scope="col">Event reference</th>
+              <th scope="col">Event type</th>
+              <th scope="col">Timestamp</th>
+              <th scope="col">Actor</th>
+              <th scope="col">Outcome</th>
+              <th scope="col">Details</th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card panel" aria-labelledby="audit-event-details-title">
+        <div class="panel-heading">
+          <div><p class="eyebrow">Selected event</p><h3 id="audit-event-details-title">Audit Event Details</h3></div>
+          <span class="state-label">Unavailable</span>
+        </div>
+        <p id="audit-event-details-status" role="status">Event details require an authorized audit reference.</p>
+        <dl class="data-list">
+          <div><dt>Event reference</dt><dd>Unavailable</dd></div>
+          <div><dt>Event type</dt><dd>Unavailable</dd></div>
+          <div><dt>Timestamp</dt><dd>Unavailable</dd></div>
+          <div><dt>Actor</dt><dd>Unavailable</dd></div>
+          <div><dt>Outcome</dt><dd>Unavailable</dd></div>
+        </dl>
+      </section>
+
+      <section class="card panel" aria-labelledby="security-activity-title">
+        <div class="panel-heading">
+          <div><p class="eyebrow">Security events</p><h3 id="security-activity-title">Security Activity History</h3></div>
+          <span class="state-label">Unavailable</span>
+        </div>
+        <p id="security-activity-status" role="status">Security activity history requires a protected Admin audit service. No security events or actors are displayed.</p>
+      </section>
+    </div>
+  </div>
+</section>
