@@ -1,0 +1,177 @@
+<section class="workspace" aria-labelledby="notifications-title">
+  <header class="hero">
+    <div class="hero-copy">
+      <p class="eyebrow">ADM-16 · Operations</p>
+      <h2 id="notifications-title">Notification Management</h2>
+      <p>Preview authorized audiences, schedule notifications in UTC, and monitor delivery status.</p>
+    </div>
+    <span class="availability" role="status">Backend integration unavailable</span>
+  </header>
+
+  <p class="availability-message" id="notifications-availability" role="status" aria-live="polite">
+    <strong>Notification operations are unavailable.</strong>
+    Trusted Admin authorization and operational notification services are required. No audience, schedule,
+    cancellation, or delivery request is sent from this page.
+  </p>
+  <p class="state-message" id="notifications-view-state" role="status">{{ stateMessages[viewState] }}</p>
+
+  <section class="overview" aria-labelledby="notifications-overview-title">
+    <h3 id="notifications-overview-title">Operations overview</h3>
+    <ul class="overview-grid" role="list">
+      <li class="card overview-card">
+        <div><h4>Audience Preview</h4><p>Preview information requires an authorized audience scope.</p></div>
+        <span class="status-label">Unavailable</span>
+      </li>
+      <li class="card overview-card">
+        <div><h4>Scheduled Notifications</h4><p>A protected schedule history listing is not available.</p></div>
+        <span class="status-label">Unavailable</span>
+      </li>
+      <li class="card overview-card">
+        <div><h4>Delivery Monitoring</h4><p>Delivery summaries require an authorized schedule reference.</p></div>
+        <span class="status-label">Unavailable</span>
+      </li>
+    </ul>
+  </section>
+
+  <div class="management-grid">
+    <div class="primary-column">
+      <section class="card panel" aria-labelledby="audience-preview-title">
+        <div class="panel-heading">
+          <div><p class="eyebrow">Audience &amp; content</p><h3 id="audience-preview-title">Audience Preview</h3></div>
+          <span class="status-label">Unavailable</span>
+        </div>
+        <p class="panel-intro" id="preview-explanation">
+          Audience preview is disabled until trusted notification permissions and the backend service are verified.
+          Recipient identities and counts are not available here.
+        </p>
+        <fieldset disabled aria-describedby="preview-explanation">
+          <legend>Preview criteria</legend>
+          <div class="form-grid">
+            <div class="field">
+              <label for="notification-template">Notification template</label>
+              <select id="notification-template"><option>Templates unavailable</option></select>
+            </div>
+            <div class="field">
+              <label for="notification-audience-role">Audience role</label>
+              <select id="notification-audience-role"><option>Audience selection unavailable</option></select>
+            </div>
+            <div class="field field-wide">
+              <label for="notification-audience-district">District targeting</label>
+              <input id="notification-audience-district" type="text" autocomplete="off" placeholder="Unavailable">
+            </div>
+          </div>
+          <button type="button" disabled aria-describedby="preview-explanation">Preview Audience</button>
+        </fieldset>
+        <section class="result-box" aria-labelledby="preview-result-title" aria-describedby="preview-result-status">
+          <h4 id="preview-result-title">Preview result</h4>
+          <p id="preview-result-status" role="status">Audience result, receipt ID, recipient count, and receipt expiry are unavailable.</p>
+          <dl class="data-list">
+            <div><dt>Preview receipt</dt><dd>Unavailable</dd></div>
+            <div><dt>Receipt expiry (UTC)</dt><dd>Unavailable</dd></div>
+          </dl>
+        </section>
+        <section class="result-box" aria-labelledby="content-preview-title">
+          <h4 id="content-preview-title">Notification content preview</h4>
+          <p>Template content is unavailable until an authorized preview service is connected. No message or deep link is composed here.</p>
+        </section>
+      </section>
+
+      <section class="card panel" aria-labelledby="notification-scheduling-title">
+        <div class="panel-heading">
+          <div><p class="eyebrow">Delivery planning</p><h3 id="notification-scheduling-title">UTC Scheduling</h3></div>
+          <span class="status-label">Disabled</span>
+        </div>
+        <p class="panel-intro" id="scheduling-explanation">
+          Scheduling requires an authorized command, an applicable unexpired preview receipt, and explicit confirmation
+          for bulk delivery. The backend must validate receipt ownership and use.
+        </p>
+        <fieldset disabled aria-describedby="scheduling-explanation">
+          <legend>Schedule request</legend>
+          <p class="panel-intro">Audience targeting uses the verified command contract. Custom message text and deep links are unavailable in the current client contract.</p>
+          <div class="form-grid">
+            <div class="field">
+              <label for="schedule-template">Notification template</label>
+              <select id="schedule-template"><option>Templates unavailable</option></select>
+            </div>
+            <div class="field">
+              <label for="schedule-audience">Audience targeting</label>
+              <input id="schedule-audience" type="text" placeholder="Audience unavailable">
+            </div>
+            <div class="field">
+              <label for="schedule-at-utc">Scheduled date and time (UTC)</label>
+              <input id="schedule-at-utc" type="text" placeholder="UTC schedule unavailable">
+            </div>
+            <div class="field field-wide">
+              <label for="schedule-preview-receipt">Preview receipt ID</label>
+              <input id="schedule-preview-receipt" type="text" placeholder="No server-issued receipt available">
+            </div>
+            <div class="field field-wide check-field">
+              <input id="schedule-confirm-bulk" type="checkbox">
+              <label for="schedule-confirm-bulk">Explicitly confirm bulk scheduling</label>
+            </div>
+          </div>
+          <button type="button" disabled aria-describedby="scheduling-explanation">Schedule Notification</button>
+        </fieldset>
+      </section>
+    </div>
+
+    <div class="secondary-column">
+      <section class="card panel" aria-labelledby="schedule-details-title">
+        <div class="panel-heading">
+          <div><p class="eyebrow">Selected schedule</p><h3 id="schedule-details-title">Schedule Details</h3></div>
+          <span class="status-label">Unavailable</span>
+        </div>
+        <p id="schedule-details-status" role="status">Schedule details require an authorized job reference.</p>
+        <dl class="data-list">
+          <div><dt>Job ID</dt><dd>Unavailable</dd></div>
+          <div><dt>Revision</dt><dd>Unavailable</dd></div>
+          <div><dt>Scheduled time (UTC)</dt><dd>Unavailable</dd></div>
+          <div><dt>Job state</dt><dd>Unavailable</dd></div>
+        </dl>
+      </section>
+
+      <section class="card panel" aria-labelledby="schedule-history-title">
+        <div class="panel-heading">
+          <div><p class="eyebrow">History</p><h3 id="schedule-history-title">Schedule History</h3></div>
+          <span class="status-label">Unavailable</span>
+        </div>
+        <p id="schedule-history-status" role="status" aria-live="polite">
+          A general protected Admin schedule-history listing is not available. This does not indicate that no schedules exist.
+        </p>
+      </section>
+
+      <section class="card panel" aria-labelledby="schedule-cancellation-title">
+        <div class="panel-heading">
+          <div><p class="eyebrow">Schedule operation</p><h3 id="schedule-cancellation-title">Cancellation</h3></div>
+          <span class="status-label">Disabled</span>
+        </div>
+        <p id="cancellation-explanation">Cancellation requires verified access for the specific job, its current revision, and a caller-supplied operation ID.</p>
+        <fieldset disabled aria-describedby="cancellation-explanation">
+          <legend>Cancellation request</legend>
+          <div class="form-grid">
+            <div class="field field-wide"><label for="cancel-job-id">Target Job ID</label><input id="cancel-job-id" type="text" placeholder="Unavailable"></div>
+            <div class="field"><label for="cancel-revision">Revision</label><input id="cancel-revision" type="number" placeholder="Unavailable"></div>
+            <div class="field"><label for="cancel-operation-id">Operation ID</label><input id="cancel-operation-id" type="text" placeholder="Unavailable"></div>
+          </div>
+          <button type="button" disabled aria-describedby="cancellation-explanation">Cancel Scheduled Notification</button>
+        </fieldset>
+      </section>
+
+      <section class="card panel" aria-labelledby="delivery-summary-title">
+        <div class="panel-heading">
+          <div><p class="eyebrow">Delivery outcomes</p><h3 id="delivery-summary-title">Delivery Summary</h3></div>
+          <span class="status-label">Unavailable</span>
+        </div>
+        <p id="delivery-summary-status" role="status">Summary values require an authorized job reference. No delivery results are shown.</p>
+        <dl class="delivery-list">
+          <div><dt>Queued</dt><dd>Unavailable</dd></div>
+          <div><dt>Delivered</dt><dd>Unavailable</dd></div>
+          <div><dt>Suppressed</dt><dd>Unavailable</dd></div>
+          <div><dt>Failed</dt><dd>Unavailable</dd></div>
+          <div><dt>Read</dt><dd>Unavailable</dd></div>
+        </dl>
+        <button type="button" disabled aria-describedby="delivery-summary-status">View Delivery Summary</button>
+      </section>
+    </div>
+  </div>
+</section>
