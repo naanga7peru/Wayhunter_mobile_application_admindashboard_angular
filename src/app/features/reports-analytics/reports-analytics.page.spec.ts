@@ -159,7 +159,7 @@ describe('ADM-15 Reports & Analytics', () => {
   });
 
   it('downloads exactly the displayed summary rows for the selected report scope', async () => {
-    const { page, date, category, set } = await openPage();
+    const { harness, page, date, category, set } = await openPage();
     set(date, '7');
     set(category, 'Users');
     const report = buildReport(await fixture(), 7, 'Users');
@@ -176,7 +176,10 @@ describe('ADM-15 Reports & Analytics', () => {
     vi.useFakeTimers();
     try {
       Array.from(page.querySelectorAll('button')).find(button => button.textContent?.includes('Export Demo CSV'))!.click();
+      harness.detectChanges();
+      expect(page.querySelector('.summary-actions + [role="status"]')?.textContent?.trim()).toBe('CSV download started.');
       expect(filename).toBe('wayhunter-fictional-demo-report-7d.csv');
+      expect(document.querySelector('a[download]')).toBeNull();
       const blob = create.mock.calls[0][0];
       expect(blob.type).toBe('text/csv;charset=utf-8');
       const csv = await blob.text();
@@ -187,6 +190,64 @@ describe('ADM-15 Reports & Analytics', () => {
       vi.runOnlyPendingTimers();
       expect(revoke).toHaveBeenCalledWith('blob:sample');
     } finally {
+      vi.useRealTimers();
+      click.mockRestore();
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it.each(['object URL creation', 'link activation'])('recovers from %s failure', async failure => {
+    const { harness, page, date, category, set } = await openPage();
+    const create = vi.fn(() => 'blob:sample');
+    const revoke = vi.fn();
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    const fail = () => { throw new Error('Download setup failed'); };
+    if (failure === 'object URL creation') create.mockImplementationOnce(fail);
+    else click.mockImplementationOnce(fail);
+
+    vi.stubGlobal('URL', class extends URL {
+      static override createObjectURL = create;
+      static override revokeObjectURL = revoke;
+    });
+    vi.useFakeTimers();
+    const button = (label: string) => Array.from(page.querySelectorAll('button'))
+      .find(candidate => candidate.textContent?.includes(label))!;
+    const exportCsv = () => {
+      button('Export Demo CSV').click();
+      harness.detectChanges();
+    };
+    try {
+      exportCsv();
+      expect(page.querySelector('[role="alert"]')?.textContent?.trim())
+        .toBe('CSV export could not be started. Please try again.');
+      expect(button('Export Demo CSV').disabled).toBe(false);
+      expect(click).toHaveBeenCalledTimes(failure === 'link activation' ? 1 : 0);
+      expect(revoke).toHaveBeenCalledTimes(failure === 'link activation' ? 1 : 0);
+      if (failure === 'link activation') expect(revoke).toHaveBeenCalledWith('blob:sample');
+      expect(document.querySelector('a[download]')).toBeNull();
+
+      exportCsv();
+      expect(page.querySelector('[role="alert"]')).toBeNull();
+      const status = () => page.querySelector('.summary-actions + [role="status"]')?.textContent?.trim();
+      expect(status()).toBe('CSV download started.');
+      expect(document.querySelector('a[download]')).toBeNull();
+      vi.runOnlyPendingTimers();
+      expect(revoke).toHaveBeenCalledTimes(failure === 'link activation' ? 2 : 1);
+      expect(revoke).toHaveBeenLastCalledWith('blob:sample');
+
+      set(date, '7');
+      expect(status()).toBe('');
+      exportCsv();
+      set(category, 'Trips');
+      expect(status()).toBe('');
+      exportCsv();
+      button('Reset filters').click();
+      harness.detectChanges();
+      expect(status()).toBe('');
+      expect(date.value).toBe('30');
+      expect(category.value).toBe('Overview');
+    } finally {
+      vi.runOnlyPendingTimers();
       vi.useRealTimers();
       click.mockRestore();
       vi.unstubAllGlobals();

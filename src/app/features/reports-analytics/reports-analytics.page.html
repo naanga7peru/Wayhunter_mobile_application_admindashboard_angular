@@ -101,6 +101,10 @@
           <p class="muted">Changes compare equal-length UTC windows. CTR changes use percentage points (pp). Percentage change is unavailable when the previous value is zero and the current value is nonzero.</p>
           <button whButton (click)="exportCsv()">Export Demo CSV</button>
         </div>
+        <p role="status">{{ exportFeedback() === 'started' ? 'CSV download started.' : '' }}</p>
+        @if (exportFeedback() === 'failed') {
+          <p role="alert">CSV export could not be started. Please try again.</p>
+        }
         <p class="muted section-note">The CSV contains the summary table for the current filters.</p>
         <wh-data-table caption="Fictional demo metric comparisons" [rows]="report.rows" [columns]="reportColumns" [rowKey]="reportKey" />
       </wh-card>
