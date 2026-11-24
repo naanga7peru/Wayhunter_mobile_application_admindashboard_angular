@@ -1,8 +1,8 @@
-﻿import { DecimalPipe } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { finalize } from 'rxjs';
+import { catchError, defaultIfEmpty, defer, finalize, map, of, Subject, switchMap, take } from 'rxjs';
 import { ApiClientService } from '../../core/http/api-client.service';
 import { UiButton } from '../../shared/ui/button';
 import { UiCard } from '../../shared/ui/card';
@@ -10,8 +10,9 @@ import { TableColumn, UiDataTable } from '../../shared/ui/data-table';
 import { FilterOption, UiFilterSelect } from '../../shared/ui/filter-select';
 import { StatusTone, UiStatusBadge } from '../../shared/ui/status-badge';
 import { DashboardChart } from './components/dashboard-chart';
-import { getDashboardDemo } from './data-access/dashboard-demo';
-import { ActivityStatus, DashboardActivity, DashboardRange } from './models/dashboard-view';
+import { UiEmptyState, UiErrorState, UiLoadingState } from '../../shared/ui/states';
+import { DASHBOARD_DEMO_SOURCE, dashboardFixtureCoverage } from './data-access/dashboard-demo';
+import { ActivityStatus, DashboardActivity, DashboardRange, DashboardSnapshot, DashboardState } from './models/dashboard-view';
 
 const activityTones: Record<ActivityStatus, StatusTone> = {
   'Completed': 'success',
@@ -22,7 +23,8 @@ const activityTones: Record<ActivityStatus, StatusTone> = {
 @Component({
   standalone: true,
   selector: 'wayhunter-dashboard-page',
-  imports: [DecimalPipe, RouterLink, UiButton, UiCard, UiDataTable, UiFilterSelect, UiStatusBadge, DashboardChart],
+  imports: [DatePipe, DecimalPipe, RouterLink, UiButton, UiCard, UiDataTable, UiEmptyState, UiErrorState,
+    UiFilterSelect, UiLoadingState, UiStatusBadge, DashboardChart],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './dashboard.page.html',
   styleUrl: './dashboard.page.scss',
@@ -31,7 +33,18 @@ export class DashboardPage {
   private readonly api = inject(ApiClientService);
   private readonly destroyRef = inject(DestroyRef);
   protected readonly range = signal<DashboardRange>('7');
-  protected readonly view = computed(() => getDashboardDemo(this.range()));
+  private readonly source = inject(DASHBOARD_DEMO_SOURCE);
+  private readonly loads = new Subject<DashboardRange>();
+  protected readonly fixtureCoverage = dashboardFixtureCoverage;
+  protected readonly state = signal<DashboardState>({ kind: 'loading' });
+  protected readonly snapshot = computed(() => {
+    const state = this.state();
+    return state.kind === 'ready' || state.kind === 'error' ? state.snapshot : undefined;
+  });
+  protected readonly lastLoadedAt = computed(() => {
+    const state = this.state();
+    return state.kind === 'empty' ? state.loadedAt : this.snapshot()?.loadedAt;
+  });
   protected readonly checkingBackend = signal(false);
   protected readonly backendStatus = signal('Not checked');
 
@@ -49,7 +62,7 @@ export class DashboardPage {
   ];
   protected readonly activitySummary = computed(() => {
     const counts = new Map<ActivityStatus, number>();
-    for (const { status } of this.view().activities) {
+    for (const { status } of this.snapshot()?.view.activities ?? []) {
       counts.set(status, (counts.get(status) ?? 0) + 1);
     }
     return Array.from(counts, ([status, count]) => ({
@@ -57,8 +70,37 @@ export class DashboardPage {
     }));
   });
 
+  constructor() {
+    this.loads.pipe(
+      switchMap(range => {
+        const previous = this.state();
+        const snapshot = 'snapshot' in previous && previous.snapshot?.range === range
+          ? previous.snapshot : undefined;
+        this.state.set({ kind: 'loading', snapshot });
+        return defer(() => this.source(range)).pipe(
+          take(1),
+          defaultIfEmpty({ kind: 'unavailable' } as const),
+          map((result): DashboardState => result.kind === 'ready'
+            ? { kind: 'ready', snapshot: { range, view: result.view, loadedAt: Date.now() } }
+            : result.kind === 'empty' ? { kind: 'empty', loadedAt: Date.now() } : { kind: 'unavailable' }),
+          catchError(() => of<DashboardState>({ kind: 'error', snapshot })),
+        );
+      }),
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe(state => this.state.set(state));
+    this.loadSamples();
+  }
+
   protected selectRange(value: string): void {
-    if (value === '7' || value === '30' || value === '90') this.range.set(value);
+    if (value === this.range()) return;
+    if (value === '7' || value === '30' || value === '90') {
+      this.range.set(value);
+      this.loadSamples();
+    }
+  }
+
+  protected loadSamples(): void {
+    this.loads.next(this.range());
   }
 
   protected checkBackend(): void {

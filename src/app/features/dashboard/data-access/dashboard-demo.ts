@@ -1,7 +1,15 @@
-﻿import { DashboardActivity, DashboardRange, DashboardView } from '../models/dashboard-view';
+import { InjectionToken } from '@angular/core';
+import { Observable, of } from 'rxjs';
+import { DashboardActivity, DashboardRange, DashboardSourceResult, DashboardView } from '../models/dashboard-view';
+
+export const DASHBOARD_DEMO_SOURCE = new InjectionToken<(range: DashboardRange) => Observable<DashboardSourceResult>>(
+  'Dashboard demo source',
+  { factory: () => range => of({ kind: 'ready', view: getDashboardDemo(range) }) },
+);
 
 const dayMs = 86_400_000;
-const sampleEnd = Date.UTC(2026, 10, 22);
+export const dashboardFixtureCoverage = Date.UTC(2026, 10, 22);
+const sampleEnd = dashboardFixtureCoverage;
 const shortDate = new Intl.DateTimeFormat('en-GB', { month: 'short', day: 'numeric', timeZone: 'UTC' });
 const dateTime = new Intl.DateTimeFormat('en-GB', {
   month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'UTC',

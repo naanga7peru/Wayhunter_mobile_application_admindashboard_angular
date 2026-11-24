@@ -1,4 +1,4 @@
-﻿<div class="dashboard">
+<div class="dashboard">
   <header class="intro">
     <div>
       <wh-status-badge tone="warning" label="Demo / Sample Data" />
@@ -8,49 +8,77 @@
     <div class="range-panel">
       <wh-filter-select label="Sample time range" [options]="ranges" [value]="range()"
                         (valueChange)="selectRange($event)" />
-      <p role="status">{{ view().period }}</p>
+      <p role="status">{{ snapshot()?.view?.period }}</p>
     </div>
   </header>
 
-  <section aria-labelledby="overview-heading">
-    <h2 id="overview-heading">KPI overview</h2>
-    <div class="metrics">
-      @for (metric of view().metrics; track metric.label; let first = $first) {
-        <wh-card>
-          <h3>{{ metric.label }}</h3>
-          <p class="metric-value">{{ metric.value | number }}</p>
-          <p class="metric-detail">{{ metric.detail }}</p>
-          <p class="trend">
-            <strong>
-              @if (metric.change > 0) { + }
-              {{ metric.change | number }}
-            </strong>
-            {{ first ? 'new accounts in period' : 'vs. previous period' }}
-          </p>
-        </wh-card>
+  <section class="dashboard-source" aria-label="Dashboard data source">
+    <p>Live Dashboard data unavailable</p>
+    <p>Sample fixture coverage through <time [attr.datetime]="fixtureCoverage | date:'yyyy-MM-dd':'UTC'">{{ fixtureCoverage | date:'mediumDate':'UTC' }}</time> (UTC)</p>
+    @if (lastLoadedAt() !== undefined) {
+      <p>Sample loaded at (local time)
+        <time class="sample-loaded-at" [attr.datetime]="lastLoadedAt() | date:'yyyy-MM-ddTHH:mm:ss.SSSZZZZZ'">{{ lastLoadedAt() | date:'medium' }}</time>
+      </p>
+    }
+    @if (state().kind === 'loading') {
+      <wh-loading-state message="Loading Dashboard sample data…" />
+    } @else if (state().kind === 'empty') {
+      <wh-empty-state message="No Dashboard sample data for this period." />
+    } @else if (state().kind === 'unavailable') {
+      <p role="status">Dashboard sample data is unavailable.</p>
+    } @else if (state().kind === 'error') {
+      <wh-error-state message="Dashboard sample data could not be loaded."
+                      retryLabel="Retry sample load" (retry)="loadSamples()" />
+      @if (snapshot()) {
+        <p role="status">Showing previous sample data</p>
       }
-    </div>
+    } @else {
+      <button whButton variant="outline" (click)="loadSamples()">Reload sample data</button>
+    }
   </section>
 
-  <section aria-labelledby="analytics-heading">
-    <h2 id="analytics-heading">Analytics overview</h2>
-    <div class="charts">
-      <wayhunter-dashboard-chart heading="Trips over time" unit="trips" kind="bars" [points]="view().points" />
-      <wayhunter-dashboard-chart heading="User growth" unit="new accounts" kind="line" [points]="view().points" />
-    </div>
-  </section>
+  @if (snapshot(); as sample) {
+    <section aria-labelledby="overview-heading">
+      <h2 id="overview-heading">KPI overview</h2>
+      <div class="metrics">
+        @for (metric of sample.view.metrics; track metric.label; let first = $first) {
+          <wh-card>
+            <h3>{{ metric.label }}</h3>
+            <p class="metric-value">{{ metric.value | number }}</p>
+            <p class="metric-detail">{{ metric.detail }}</p>
+            <p class="trend">
+              <strong>
+                @if (metric.change > 0) { + }
+                {{ metric.change | number }}
+              </strong>
+              {{ first ? 'new accounts in period' : 'vs. previous period' }}
+            </p>
+          </wh-card>
+        }
+      </div>
+    </section>
+
+    <section aria-labelledby="analytics-heading">
+      <h2 id="analytics-heading">Analytics overview</h2>
+      <div class="charts">
+        <wayhunter-dashboard-chart heading="Trips over time" unit="trips" kind="bars" [points]="sample.view.points" />
+        <wayhunter-dashboard-chart heading="User growth" unit="new accounts" kind="line" [points]="sample.view.points" />
+      </div>
+    </section>
+  }
 
   <div class="operations">
-    <wh-card heading="Recent activities">
-      <ul class="activity-summary" aria-label="Activity status counts">
-        @for (badge of activitySummary(); track badge.status) {
-          <li><wh-status-badge [tone]="badge.tone" [label]="badge.label" /></li>
-        }
-      </ul>
-      <wh-data-table caption="Sample administrative events" [rows]="view().activities"
-                     [columns]="activityColumns" [rowKey]="activityKey" />
-    </wh-card>
-
+    @if (snapshot(); as sample) {
+      <wh-card heading="Recent activities">
+        <ul class="activity-summary" aria-label="Activity status counts">
+          @for (badge of activitySummary(); track badge.status) {
+            <li><wh-status-badge [tone]="badge.tone" [label]="badge.label" /></li>
+          }
+        </ul>
+        <wh-data-table caption="Sample administrative events" [rows]="sample.view.activities"
+                       [columns]="activityColumns" [rowKey]="activityKey" />
+      </wh-card>
+    }
     <wh-card heading="Review modules">
       <ul class="review-list">
         <li>
