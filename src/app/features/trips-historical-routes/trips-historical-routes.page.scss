@@ -1,0 +1,156 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.workspace, .panel {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.hero {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: .75rem 1rem;
+  padding: clamp(1rem, 3vw, 1.75rem);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  background: linear-gradient(120deg, var(--surface), var(--wash));
+}
+
+h2, h3, h4, p {
+  margin: 0;
+}
+
+p {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.hero p, .detail p {
+  margin-top: .35rem;
+}
+
+.availability {
+  padding: .35rem .65rem;
+  border-radius: var(--radius-control);
+  background: var(--warning-bg);
+  color: var(--warning-ink);
+  font-size: .875rem;
+  font-weight: 600;
+}
+
+.stages {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
+  gap: .75rem;
+  margin: .65rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  background: var(--glass);
+  box-shadow: var(--panel-shadow);
+}
+
+.stages li {
+  border-inline-start: .25rem solid var(--accent);
+  font-weight: 600;
+}
+
+.review-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 1rem;
+}
+
+fieldset {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: .65rem;
+}
+
+fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+fieldset div {
+  flex: 1 1 10rem;
+  min-width: 0;
+}
+
+label {
+  display: block;
+  margin-bottom: .35rem;
+  font-weight: 600;
+}
+
+input, select, button {
+  min-height: 2.5rem;
+  padding: .45rem .65rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  font: inherit;
+}
+
+input, select {
+  width: 100%;
+}
+
+input:disabled, select:disabled, button:disabled {
+  background: var(--neutral-bg);
+  color: var(--muted);
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+.table-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+}
+
+.table-scroll:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th {
+  padding: .65rem;
+  text-align: start;
+  background: var(--neutral-bg);
+}
+
+.activity-state {
+  padding: .85rem;
+  border-radius: var(--radius-control);
+  background: var(--wash);
+}
+
+.detail {
+  padding-block-start: .75rem;
+  border-block-start: 1px solid var(--line);
+}
+
+@media (max-width: 64rem) {
+  .review-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

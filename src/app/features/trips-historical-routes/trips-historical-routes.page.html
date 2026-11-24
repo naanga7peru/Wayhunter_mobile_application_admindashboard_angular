@@ -1,0 +1,84 @@
+<section class="workspace" aria-labelledby="trips-title">
+  <header class="hero">
+    <div>
+      <h2 id="trips-title">Trips &amp; Historical Routes</h2>
+      <p>Review trip activity, completed routes, and safety-session summaries.</p>
+    </div>
+    <span class="availability">Live integration unavailable</span>
+  </header>
+
+  <section aria-labelledby="trips-overview-title">
+    <h3 id="trips-overview-title">Trip overview</h3>
+    <ul class="stages" role="list" aria-labelledby="trips-overview-title">
+      @for (status of tripStatuses; track status) {
+        <li class="card">{{ status }}</li>
+      }
+    </ul>
+  </section>
+
+  <div class="review-grid">
+    <section class="card panel" aria-labelledby="trips-activity-title">
+      <h3 id="trips-activity-title">Trip activity</h3>
+      <p class="activity-state" id="trips-activity-status" role="status">{{ activityMessages[activityState] }}</p>
+
+      <form aria-labelledby="trips-activity-title" aria-describedby="trips-activity-status"
+            (submit)="$event.preventDefault()">
+        <fieldset disabled>
+          <div>
+            <label for="trips-reference">Trip reference</label>
+            <input id="trips-reference" type="search" autocomplete="off">
+          </div>
+          <div>
+            <label for="trips-status-filter">Trip status</label>
+            <select id="trips-status-filter"><option>Status filter unavailable</option></select>
+          </div>
+          <button type="submit">Search</button>
+        </fieldset>
+      </form>
+
+      <div class="table-scroll" role="region" aria-label="Trip activity table" tabindex="0">
+        <table aria-labelledby="trips-activity-title" aria-describedby="trips-activity-status">
+          <thead>
+            <tr>
+              <th scope="col">Trip reference</th>
+              <th scope="col">Trip status</th>
+              <th scope="col">Start date and time</th>
+              <th scope="col">End date and time</th>
+              <th scope="col">Route information</th>
+              <th scope="col">Details</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card panel" aria-labelledby="trips-details-title">
+      <h3 id="trips-details-title">Trip details</h3>
+      <div class="detail">
+        <h4>Trip overview</h4>
+        <p>Trip references and details require access to the Admin trip catalog.</p>
+      </div>
+      <div class="detail">
+        <h4>Trip timing and status</h4>
+        <p>Trip status and start and end times are unavailable.</p>
+      </div>
+      <div class="detail">
+        <h4>Route information</h4>
+        <p>Planned routes and stops require authorized access to trip details.</p>
+      </div>
+      <div class="detail">
+        <h4>Historical routes</h4>
+        <p>Completed routes and route reuse history are unavailable.</p>
+      </div>
+      <div class="detail">
+        <h4>Safety sessions</h4>
+        <p>Safety summaries require a scoped Admin grant for a specific trip and session.</p>
+      </div>
+      <div class="detail">
+        <h4>Trip activity history</h4>
+        <p>Activity history is unavailable until an authorized Admin trip history service is connected.</p>
+      </div>
+    </section>
+  </div>
+</section>
