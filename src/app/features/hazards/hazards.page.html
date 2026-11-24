@@ -1,0 +1,95 @@
+<section class="workspace" aria-labelledby="hazards-title">
+  <header class="hero">
+    <div>
+      <h2 id="hazards-title">Hazard Management</h2>
+      <p>Review hazard reports, check supporting evidence, and manage verification and resolution decisions.</p>
+    </div>
+    <span class="availability">Live integration unavailable</span>
+  </header>
+
+  <section aria-labelledby="hazards-overview-title">
+    <h3 id="hazards-overview-title">Review overview</h3>
+    <ul class="stages" role="list" aria-labelledby="hazards-overview-title">
+      @for (stage of reviewStages; track stage) {
+        <li class="card">{{ stage }}</li>
+      }
+    </ul>
+  </section>
+
+  <div class="review-grid">
+    <section class="card panel" aria-labelledby="hazards-list">
+      <h3 id="hazards-list">Hazard reports</h3>
+      <p class="report-state" id="hazards-availability" role="status">{{ reportMessages[reportState] }}</p>
+
+      <form aria-labelledby="hazards-list" aria-describedby="hazards-availability"
+            (submit)="$event.preventDefault()">
+        <fieldset disabled>
+          <div>
+            <label for="hazards-query">Hazard reference</label>
+            <input id="hazards-query" type="search" autocomplete="off">
+          </div>
+          <div>
+            <label for="hazards-status">Verification status</label>
+            <select id="hazards-status"><option>Status filter unavailable</option></select>
+          </div>
+          <button type="submit">Search</button>
+        </fieldset>
+      </form>
+
+      <div class="table-scroll" role="region" aria-label="Hazard reports table" tabindex="0">
+        <table aria-labelledby="hazards-list" aria-describedby="hazards-availability">
+          <thead>
+            <tr>
+              <th scope="col">Hazard reference</th>
+              <th scope="col">Report status</th>
+              <th scope="col">Location</th>
+              <th scope="col">Reported at</th>
+              <th scope="col">Details</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card panel" aria-labelledby="hazards-details-title">
+      <h3 id="hazards-details-title">Report details</h3>
+      <div class="detail">
+        <h4>Hazard overview</h4>
+        <p>Report references and descriptions require access to the Admin hazard catalog.</p>
+      </div>
+      <div class="detail">
+        <h4>Report status and verification</h4>
+        <p>Report status and verification information are unavailable.</p>
+      </div>
+      <div class="detail">
+        <h4>Location details</h4>
+        <p>Report locations require authorized access to hazard details.</p>
+      </div>
+      <div class="detail">
+        <h4>Photo and evidence</h4>
+        <p>Photo evidence is unavailable without authorized evidence access.</p>
+      </div>
+      <div class="detail">
+        <h4>Report and capture times</h4>
+        <p>Stored report and photo capture times are unavailable.</p>
+      </div>
+      <div class="detail">
+        <h4>Traveler warnings</h4>
+        <p>The documented rules limit warnings to trips whose planned route comes within 1 km of the hazard. Warnings show the photo capture time and expire 24 hours after the stored report time. Capture time must be validated.</p>
+      </div>
+      <div class="detail">
+        <h4>Verification and resolution history</h4>
+        <p>Review history requires access to protected audit records.</p>
+      </div>
+      <div class="detail">
+        <h4 id="hazard-review-title">Moderation decisions</h4>
+        <p id="hazard-review-status">These actions require trusted Admin authorization and access to the report and its evidence.</p>
+        <div class="actions" role="group" aria-labelledby="hazard-review-title" aria-describedby="hazard-review-status">
+          <button type="button" disabled>Verify Hazard</button>
+          <button type="button" disabled>Resolve Hazard</button>
+        </div>
+      </div>
+    </section>
+  </div>
+</section>
