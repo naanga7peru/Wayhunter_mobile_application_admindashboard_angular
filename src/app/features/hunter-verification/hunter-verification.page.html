@@ -1,0 +1,83 @@
+<section class="workspace" aria-labelledby="hunter-title">
+  <header class="hero">
+    <div>
+      <h2 id="hunter-title">Hunter Verification</h2>
+      <p>Review Hunter applications, assess submitted evidence, and record moderation decisions.</p>
+    </div>
+    <span class="availability">Live integration unavailable</span>
+  </header>
+
+  <section aria-labelledby="hunter-workflow-title">
+    <h3 id="hunter-workflow-title">Workflow overview</h3>
+    <ul class="stages" aria-labelledby="hunter-workflow-title">
+      @for (stage of stages; track stage) {
+        <li class="card">{{ stage }}</li>
+      }
+    </ul>
+  </section>
+
+  <div class="review-grid">
+    <section class="card panel" aria-labelledby="hunter-queue-title">
+      <h3 id="hunter-queue-title">Verification applications</h3>
+      <form aria-labelledby="hunter-queue-title" aria-describedby="hunter-queue-status"
+            (submit)="$event.preventDefault()">
+        <fieldset disabled>
+          <div>
+            <label for="hunter-query">Applicant name or reference</label>
+            <input id="hunter-query" type="search" autocomplete="off">
+          </div>
+          <div>
+            <label for="hunter-status">Verification status</label>
+            <select id="hunter-status">
+              <option>All statuses</option>
+              @for (stage of stages; track stage) {
+                <option>{{ stage }}</option>
+              }
+            </select>
+          </div>
+          <button type="submit">Search</button>
+        </fieldset>
+      </form>
+      <div class="table-scroll" role="region" aria-label="Application table" tabindex="0">
+        <table aria-labelledby="hunter-queue-title" aria-describedby="hunter-queue-status">
+          <thead>
+            <tr>
+              <th scope="col">Applicant name</th>
+              <th scope="col">Application reference</th>
+              <th scope="col">Submitted</th>
+              <th scope="col">Status</th>
+              <th scope="col">Details</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="queue-state" id="hunter-queue-status" role="status">{{ queueMessages[queueState] }}</p>
+    </section>
+
+    <section class="card panel" aria-labelledby="hunter-details-title">
+      <h3 id="hunter-details-title">Application details</h3>
+      <div class="detail">
+        <h4>Applicant overview</h4>
+        <p>Applicant identity and submission details are unavailable.</p>
+      </div>
+      <div class="detail">
+        <h4>Submitted verification evidence</h4>
+        <p>Capture district, location, photos, live 360° evidence and nearby duplicate candidates require authorized evidence access.</p>
+      </div>
+      <div class="detail">
+        <h4>Review history</h4>
+        <p>Review history requires access to protected audit records.</p>
+      </div>
+      <div class="detail">
+        <h4 id="hunter-review-title">Moderation decision</h4>
+        <p id="hunter-review-status">Decisions require a trusted Admin service that records the reviewer, reason, and outcome.</p>
+        <div class="actions" role="group" aria-labelledby="hunter-review-title" aria-describedby="hunter-review-status">
+          <button type="button" disabled>Approve</button>
+          <button type="button" disabled>Reject</button>
+          <button type="button" disabled>Hold</button>
+        </div>
+      </div>
+    </section>
+  </div>
+</section>
