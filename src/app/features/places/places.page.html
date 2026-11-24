@@ -1,0 +1,90 @@
+<section class="workspace" aria-labelledby="places-title">
+  <header class="hero">
+    <div>
+      <h2 id="places-title">Places Management</h2>
+      <p>Review the place catalog, inspect publication history, and manage duplicate or hidden entries.</p>
+    </div>
+    <span class="availability">Live integration unavailable</span>
+  </header>
+
+  <section aria-labelledby="places-overview-title">
+    <h3 id="places-overview-title">Catalog overview</h3>
+    <ul class="stages" role="list" aria-labelledby="places-overview-title">
+      @for (section of catalogSections; track section) {
+        <li class="card">{{ section }}</li>
+      }
+    </ul>
+  </section>
+
+  <div class="review-grid">
+    <section class="card panel" aria-labelledby="places-list-title">
+      <h3 id="places-list-title">Places catalog</h3>
+      <p class="catalog-state" id="places-list-status" role="status">{{ catalogMessages[catalogState] }}</p>
+
+      <form aria-labelledby="places-list-title" aria-describedby="places-list-status"
+            (submit)="$event.preventDefault()">
+        <fieldset disabled>
+          <div>
+            <label for="places-query">Place name or reference</label>
+            <input id="places-query" type="search" autocomplete="off">
+          </div>
+          <div>
+            <label for="places-category">Category</label>
+            <select id="places-category"><option>Category unavailable</option></select>
+          </div>
+          <div>
+            <label for="places-status">Publication status</label>
+            <select id="places-status"><option>Status unavailable</option></select>
+          </div>
+          <button type="submit">Search</button>
+        </fieldset>
+      </form>
+
+      <div class="table-scroll" role="region" aria-label="Places catalog table" tabindex="0">
+        <table aria-labelledby="places-list-title" aria-describedby="places-list-status">
+          <thead>
+            <tr>
+              <th scope="col">Place name or reference</th>
+              <th scope="col">Category</th>
+              <th scope="col">District or region</th>
+              <th scope="col">Publication status</th>
+              <th scope="col">Last updated</th>
+              <th scope="col">Details</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card panel" aria-labelledby="places-details-title">
+      <h3 id="places-details-title">Place details</h3>
+      <div class="detail">
+        <h4>Place overview</h4>
+        <p>Place names and references are unavailable until the catalog is connected.</p>
+      </div>
+      <div class="detail">
+        <h4>Category and location</h4>
+        <p>Category and district or region require authorized access to place details.</p>
+      </div>
+      <div class="detail">
+        <h4>Publication status</h4>
+        <p>Publication status is unavailable.</p>
+      </div>
+      <div class="detail">
+        <h4>Change and review history</h4>
+        <p>Change and review history requires access to protected audit records.</p>
+      </div>
+      <div class="detail">
+        <h4 id="places-moderation-title">Place moderation</h4>
+        <p id="places-moderation-status">Editing, merging, and hiding places require authorized Admin APIs and an audit trail.</p>
+        <div class="actions" role="group" aria-labelledby="places-moderation-title"
+             aria-describedby="places-moderation-status">
+          <button type="button" disabled>Edit place</button>
+          <button type="button" disabled>Merge duplicates</button>
+          <button type="button" disabled>Hide place</button>
+        </div>
+      </div>
+    </section>
+  </div>
+</section>
