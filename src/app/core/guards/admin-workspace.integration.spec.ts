@@ -1,7 +1,8 @@
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
+import { NavigationEnd, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
+import { filter, firstValueFrom } from 'rxjs';
 import { vi } from 'vitest';
 import { environment } from '../../../environments/environment';
 import { appConfig } from '../../app.config';
@@ -19,6 +20,13 @@ const ownedModules = [
   ['settings-security-audit', 'Settings, Security & Audit'],
 ] as const;
 
+const m7Modules = [
+  { path: 'dashboard', label: 'Dashboard', heading: 'Welcome to WayHunter', content: 'Recent activities' },
+  { path: 'advertisements', label: 'Advertisements', heading: 'Advertisements Management', content: 'Advertisement inventory' },
+  { path: 'campaigns', label: 'Campaigns', heading: 'Campaigns Management', content: 'Campaign inventory' },
+  { path: 'reports-analytics', label: 'Reports & Analytics', heading: 'Reports & Analytics', content: 'Reporting overview' },
+] as const;
+
 describe('Admin workspace integration', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -27,6 +35,64 @@ describe('Admin workspace integration', () => {
   });
 
   afterEach(() => TestBed.inject(HttpTestingController).verify());
+
+  describe('M7 module routes', () => {
+    it.each(m7Modules)('opens $label from the development preview sidebar', async ({ path, label, heading, content }) => {
+      const harness = await RouterTestingHarness.create('/preview/authentication');
+      const router = TestBed.inject(Router);
+      const previewUrl = `/preview/${path}`;
+      const link = harness.routeNativeElement?.querySelector<HTMLAnchorElement>(
+        `nav[aria-label="Admin modules"] a[href="${previewUrl}"]`,
+      );
+
+      expect(link?.textContent?.trim()).toBe(label);
+      expect(link?.hasAttribute('aria-current')).toBe(false);
+
+      const navigated = firstValueFrom(
+        router.events.pipe(filter(event => event instanceof NavigationEnd)),
+      );
+      link!.click();
+      await navigated;
+      await harness.fixture.whenStable();
+      harness.detectChanges();
+
+      expect(router.url).toBe(previewUrl);
+      expect(link?.getAttribute('aria-current')).toBe('page');
+      expect(harness.routeNativeElement?.textContent).toContain('Development preview');
+      expect(harness.routeNativeElement?.querySelector('main h1')?.textContent).toBe(label);
+      const page = harness.routeNativeElement?.querySelector(`main wayhunter-${path}-page`);
+      expect(page?.querySelector('h2')?.textContent).toBe(heading);
+      expect(page?.querySelector(`wh-card[heading="${content}"]`)).toBeTruthy();
+      expect(page?.querySelector('wh-error-state')).toBeNull();
+    });
+
+    it.each(m7Modules)('denies unauthenticated direct Admin access to $label', async ({ path }) => {
+      const harness = await RouterTestingHarness.create(`/admin/${path}`);
+
+      expect(TestBed.inject(AdminAccessService).decide().allowed).toBe(false);
+      expect(TestBed.inject(Router).url).toBe('/login');
+      expect(harness.routeNativeElement?.textContent).toContain('Sign-in unavailable');
+      expect(harness.fixture.nativeElement.querySelector(`wayhunter-${path}-page`)).toBeNull();
+      expect(harness.fixture.nativeElement.querySelector('wayhunter-admin-shell')).toBeNull();
+      expect(harness.fixture.nativeElement.querySelector('nav[aria-label="Admin modules"]')).toBeNull();
+    });
+
+    it.each(m7Modules)('denies a $label preview deep link in production mode', async ({ path }) => {
+      const harness = await RouterTestingHarness.create();
+      vi.stubGlobal('ngDevMode', false);
+      try {
+        await harness.navigateByUrl(`/preview/${path}`);
+
+        expect(TestBed.inject(Router).url).toBe('/login');
+        expect(harness.routeNativeElement?.textContent).toContain('Sign-in unavailable');
+        expect(harness.routeNativeElement?.querySelector('a[href="/preview"]')).toBeNull();
+        expect(harness.fixture.nativeElement.querySelector(`wayhunter-${path}-page`)).toBeNull();
+        expect(harness.fixture.nativeElement.querySelector('wayhunter-admin-shell')).toBeNull();
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
+  });
 
   it.each(ownedModules)('loads %s in development preview and denies its Admin route', async (path, heading) => {
     const harness = await RouterTestingHarness.create(`/preview/${path}`);
