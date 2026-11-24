@@ -1,0 +1,118 @@
+<div class="reports">
+  <header class="intro">
+    <div class="badges">
+      <wh-status-badge tone="info" label="ADM-15 / M7" />
+      <wh-status-badge tone="warning" label="Demo Data" />
+    </div>
+    <h2>Reports &amp; Analytics</h2>
+    <p>Explore administrative performance, activity trends and sample reporting across Wayhunter modules.</p>
+    @if (snapshot(); as sample) {
+      <p class="sample-note">Fictional statistics · Sample as of {{ sample.asOf | date:'d MMM y':'UTC' }} (UTC)</p>
+    }
+  </header>
+
+  @switch (state().kind) {
+    @case ('loading') { <wh-loading-state message="Loading sample reports…" /> }
+    @case ('error') {
+      <wh-error-state message="Sample reports could not be loaded." retryLabel="Retry loading reports" (retry)="load()" />
+    }
+  }
+
+  @if (view(); as report) {
+    <wh-card heading="Reporting overview">
+      <div class="filters" role="group" aria-label="Report filters">
+        <wh-filter-select label="Sample date range" [options]="rangeOptions" [value]="range().toString()"
+                          (valueChange)="selectRange($event)" />
+        <wh-filter-select label="Report category" [options]="categoryOptions" [value]="category()"
+                          (valueChange)="selectCategory($event)" />
+        <button whButton variant="outline" (click)="reset()">Reset filters</button>
+      </div>
+      <div class="period" role="status">
+        <div><span>Selected period (UTC)</span><strong>{{ report.label }}</strong></div>
+        <div><span>Previous period (UTC)</span><strong>{{ report.comparisonLabel }}</strong></div>
+      </div>
+    </wh-card>
+
+    @if (report.hasData) {
+      @if (category() === 'Overview') {
+        <div class="kpis" role="group" aria-label="Sample metrics in the selected period">
+          @for (metric of report.overview; track metric.id) {
+            <wh-card>
+              <div class="kpi">
+                <h3>Sample {{ metric.label.toLowerCase().replace('hunter', 'Hunter').replace('coins', 'Coins') }}</h3>
+                <p class="kpi-value">{{ metric.value | number }} @if (metric.unit) { <small>{{ metric.unit }}</small> }</p>
+                <p class="muted">Selected sample period</p>
+              </div>
+            </wh-card>
+          }
+        </div>
+      }
+
+      <div class="panels">
+        @for (section of report.sections; track section.key) {
+          <wh-card [heading]="section.heading" [class.wide]="section.key === 'campaigns'">
+            <dl class="stats">
+              @for (stat of section.stats; track stat.id) {
+                <div><dt>{{ stat.label }}</dt><dd>{{ stat.display }}</dd></div>
+              }
+            </dl>
+            @switch (section.key) {
+              @case ('users') {
+                <p class="muted">New registrations in the selected window. The summary compares them with the preceding equal-length period.</p>
+                <wayhunter-report-trend label="New registrations" [granularity]="granularity()" [points]="report.trends.users" />
+              }
+              @case ('trips') {
+                <p class="muted">Completions require both a valid start and finish. Started trips can include cancelled trips.</p>
+                <wayhunter-report-trend label="Completed trips" [granularity]="granularity()" [points]="report.trends.trips" [tripCounts]="true" />
+              }
+              @case ('hunters') {
+                <p class="muted">Review states describe fictional Hunter records submitted during the selected window.</p>
+              }
+              @case ('games') {
+                <p class="muted">Creation approval and verified player wins are counted separately. Each approved game can have one verified winner. Expired games stay in the archive.</p>
+              }
+              @case ('coins') {
+                <p class="muted">Finalized spend counts approved voucher debits in the window. Reservations are open holds at period end.</p>
+                <details class="notes">
+                  <summary>Sample voucher and award rules</summary>
+                  <p>Eligible welcome awards give 100 Coins, Hunter approvals 200, game creation approvals 100, and verified winners 100, once per eligible event.</p>
+                  <p>The LKR 100 sample voucher requires at least 10,100 spendable Coins. A request reserves 10,000 Coins. Admin approval finalizes the debit once. Rejection or cancellation releases the hold. Issuance adds no debit.</p>
+                </details>
+                <wayhunter-report-trend label="Coins awarded" [granularity]="granularity()" [points]="report.trends.coins" />
+              }
+              @case ('ads') {
+                <p class="muted">CTR is clicks divided by impressions. Zero impressions display 0% CTR in this demo.</p>
+                <wayhunter-report-trend label="Advertisement impressions" [granularity]="granularity()" [points]="report.trends.ads" />
+                <wh-data-table caption="Sample placement breakdown" [rows]="report.placements" [columns]="placementColumns"
+                               [rowKey]="placementKey" emptyMessage="No sample placement delivery in this period." />
+              }
+              @case ('campaigns') {
+                <p class="muted section-note">Includes campaigns first recorded or attributed delivery in the window. Linked ads can appear in multiple campaigns, while delivery is attributed once per ad record.</p>
+                <wh-data-table caption="Sample campaign comparisons" [rows]="report.campaigns" [columns]="campaignColumns"
+                               [rowKey]="campaignKey" emptyMessage="No sample campaigns in this period." />
+              }
+            }
+          </wh-card>
+        }
+      </div>
+
+      <wh-card heading="Report summary">
+        <div class="summary-actions">
+          <p class="muted">Changes compare equal-length UTC windows. CTR changes use percentage points (pp). Percentage change is unavailable when the previous value is zero and the current value is nonzero.</p>
+          <button whButton (click)="exportCsv()">Export Demo CSV</button>
+        </div>
+        <p class="muted section-note">The CSV contains the summary table for the current filters.</p>
+        <wh-data-table caption="Fictional demo metric comparisons" [rows]="report.rows" [columns]="reportColumns" [rowKey]="reportKey" />
+      </wh-card>
+
+      <wh-card heading="Audit &amp; report history">
+        <p class="muted section-note">Read-only fictional events for the selected scope and dates.</p>
+        <wh-data-table caption="Sample report history events" [rows]="report.history" [columns]="historyColumns"
+                       [rowKey]="historyKey" emptyMessage="No sample history events in this scope and period." />
+      </wh-card>
+    } @else {
+      <wh-empty-state message="No sample reports are available for this period." />
+      <wayhunter-report-trend label="Selected report activity" [granularity]="granularity()" [points]="[]" />
+    }
+  }
+</div>
