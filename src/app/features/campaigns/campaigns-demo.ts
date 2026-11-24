@@ -18,6 +18,7 @@ export interface Campaign {
   readonly audience: string;
   readonly start: string;
   readonly end: string;
+  readonly budgetCoins: number;
   readonly summary: string;
   readonly reviewNote: string;
   readonly adIds: readonly string[];
@@ -46,6 +47,7 @@ const campaigns: readonly Campaign[] = [
     id: 'CMP-201', title: 'Ridge Trail Spotlight', sponsor: 'Demo Ridge Outfitters',
     category: 'Promoted place', status: 'Active', district: 'Kandy', audience: 'Travelers exploring Kandy',
     start: '2026-11-10', end: '2026-12-12', impressions: 3600, clicks: 144, adIds: ['AD-101'],
+    budgetCoins: 5000,
     summary: 'Explore a sample collection of ridge walks and viewpoints.',
     reviewNote: 'Sponsor disclosure and destination copy reviewed in the sample.',
   },
@@ -53,6 +55,7 @@ const campaigns: readonly Campaign[] = [
     id: 'CMP-202', title: 'Coastal Discovery Pass', sponsor: 'Demo Coast Collective',
     category: 'District pass', status: 'Active', district: 'Galle', audience: 'Travelers exploring Galle',
     start: '2026-11-03', end: '2026-12-01', impressions: 2400, clicks: 96, adIds: ['AD-102'],
+    budgetCoins: 3000,
     summary: 'Browse an illustrative itinerary of coastal walks.',
     reviewNote: 'The sample itinerary and district label were reviewed.',
   },
@@ -60,6 +63,7 @@ const campaigns: readonly Campaign[] = [
     id: 'CMP-203', title: 'Forest Loop Challenge', sponsor: 'Demo Forest Lab',
     category: 'Sponsored game', status: 'Pending Review', district: 'Matale', audience: 'Players browsing Matale',
     start: '2026-12-01', end: '2026-12-21', impressions: 0, clicks: 0, adIds: ['AD-103'],
+    budgetCoins: 2500,
     summary: 'Preview a sponsored discovery challenge along a fictional forest loop.',
     reviewNote: 'Sample review is waiting for a creative and sponsor disclosure check.',
   },
@@ -67,6 +71,7 @@ const campaigns: readonly Campaign[] = [
     id: 'CMP-204', title: 'Highland Sunrise Series', sponsor: 'Demo Ridge Outfitters',
     category: 'Promoted place', status: 'Scheduled', district: 'Nuwara Eliya', audience: 'Travelers exploring Nuwara Eliya',
     start: '2026-12-02', end: '2026-12-23', impressions: 0, clicks: 0, adIds: ['AD-105'],
+    budgetCoins: 4000,
     summary: 'Discover a sample set of highland viewpoints for early walks.',
     reviewNote: 'A future display window is recorded in the sample.',
   },
@@ -74,6 +79,7 @@ const campaigns: readonly Campaign[] = [
     id: 'CMP-205', title: 'Canopy Field Journal', sponsor: 'Demo Canopy Studio',
     category: 'Verified mission', status: 'Draft', district: 'Ratnapura', audience: 'Hunters exploring Ratnapura',
     start: '2026-12-10', end: '2026-12-28', impressions: 0, clicks: 0, adIds: [],
+    budgetCoins: 0,
     summary: 'Preview a fictional mission about documenting trail observations.',
     reviewNote: 'The sample brief is awaiting submission.',
   },
@@ -81,6 +87,7 @@ const campaigns: readonly Campaign[] = [
     id: 'CMP-206', title: 'Autumn Trail Map', sponsor: 'Demo Ridge Outfitters',
     category: 'District pass', status: 'Ended', district: 'Kandy', audience: 'Travelers exploring Kandy',
     start: '2026-10-05', end: '2026-10-31', impressions: 1000, clicks: 60, adIds: ['AD-110'],
+    budgetCoins: 2000,
     summary: 'Browse an example of a past seasonal trail promotion.',
     reviewNote: 'The sample display window has ended.',
   },

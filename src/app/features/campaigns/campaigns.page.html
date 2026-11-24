@@ -78,7 +78,11 @@
               <p class="muted">{{ campaign.id }} · {{ campaign.category }}</p>
               <h3 #detailsHeading id="campaign-details-title" tabindex="-1">{{ campaign.title }}</h3>
             </div>
-            <button whButton variant="outline" (click)="closeDetails()">Close details</button>
+            <div class="editor-actions">
+              <button #editButton whButton variant="outline" (click)="editCampaign(campaign)"
+                      [attr.aria-expanded]="editing()" [attr.aria-controls]="editing() ? 'campaign-editor' : null">Edit demo campaign</button>
+              <button whButton variant="outline" (click)="closeDetails()">Close details</button>
+            </div>
           </div>
           <dl class="detail-grid">
             <div><dt>Sponsor</dt><dd>{{ campaign.sponsor }}</dd></div>
@@ -93,6 +97,94 @@
             {{ campaign.impressions | number }} sample impressions · {{ campaign.clicks | number }} sample clicks ·
             {{ ctr(campaign.clicks, campaign.impressions) | number:'1.1-2' }}% CTR
           </p>
+
+          @if (editing()) {
+            <section id="campaign-editor" aria-labelledby="campaign-editor-title"
+                     (keydown.escape)="$event.stopPropagation(); closeEditor()">
+              <h4 #editorHeading id="campaign-editor-title" tabindex="-1">Edit demo campaign</h4>
+              <p class="muted">Demo drafts are kept on this page until you leave or reload.</p>
+              <form [formGroup]="editor" (ngSubmit)="saveDraft(campaign)">
+                <div class="editor-fields">
+                  <label>Campaign title
+                    <input formControlName="title" required [attr.aria-invalid]="submitted() && editor.controls.title.invalid"
+                           [attr.aria-describedby]="submitted() && editor.controls.title.invalid ? 'campaign-title-error' : null">
+                    @if (submitted() && editor.controls.title.invalid) {
+                      <span id="campaign-title-error" class="field-error">Enter a campaign title.</span>
+                    }
+                  </label>
+                  <label>Sponsor
+                    <select formControlName="sponsor" required>
+                      @for (sponsor of sponsors(); track sponsor) { <option [value]="sponsor">{{ sponsor }}</option> }
+                    </select>
+                  </label>
+                  <label>Campaign type
+                    <select formControlName="category" required (change)="changeCampaignType()">
+                      @for (type of campaignTypes; track type) { <option [value]="type">{{ type }}</option> }
+                    </select>
+                  </label>
+                  <label>Linked demo content
+                    <select formControlName="contentId" required
+                            [attr.aria-invalid]="submitted() && editor.controls.contentId.invalid"
+                            [attr.aria-describedby]="submitted() && editor.controls.contentId.invalid ? 'campaign-content-error' : null">
+                      <option value="">Select content</option>
+                      @for (content of contentOptions(); track content.id) {
+                        <option [value]="content.id">{{ content.title }}</option>
+                      }
+                    </select>
+                    @if (submitted() && editor.controls.contentId.invalid) {
+                      <span id="campaign-content-error" class="field-error">Select linked content for this campaign type.</span>
+                    }
+                  </label>
+                  <label>Start date (UTC)
+                    <input type="date" formControlName="start" required
+                           [attr.aria-invalid]="submitted() && editor.controls.start.invalid"
+                           [attr.aria-describedby]="submitted() && editor.controls.start.invalid ? 'campaign-start-error' : 'campaign-date-help'">
+                    @if (submitted() && editor.controls.start.invalid) {
+                      <span id="campaign-start-error" class="field-error">Enter a valid start date.</span>
+                    }
+                  </label>
+                  <label>End date (UTC)
+                    <input type="date" formControlName="end" required
+                           [attr.aria-invalid]="submitted() && (editor.controls.end.invalid || editor.hasError('dateOrder'))"
+                           [attr.aria-describedby]="submitted() && (editor.controls.end.invalid || editor.hasError('dateOrder')) ? 'campaign-end-error' : 'campaign-date-help'">
+                    @if (submitted() && (editor.controls.end.invalid || editor.hasError('dateOrder'))) {
+                      <span id="campaign-end-error" class="field-error">
+                        {{ editor.controls.end.invalid ? 'Enter a valid end date.' : 'End date must be after the start date.' }}
+                      </span>
+                    }
+                  </label>
+                  <label>Audience
+                    <select formControlName="audience" required>
+                      @for (audience of audiences(); track audience) { <option [value]="audience">{{ audience }}</option> }
+                    </select>
+                  </label>
+                  <label>District targeting
+                    <select formControlName="district">
+                      <option value="">All districts</option>
+                      @for (district of districts(); track district) { <option [value]="district">{{ district }}</option> }
+                    </select>
+                  </label>
+                  <label>Coins budget
+                    <input type="number" formControlName="budgetCoins" min="0" step="1" required
+                           [attr.aria-invalid]="submitted() && editor.controls.budgetCoins.invalid"
+                           [attr.aria-describedby]="submitted() && editor.controls.budgetCoins.invalid ? 'campaign-budget-error' : null">
+                    @if (submitted() && editor.controls.budgetCoins.invalid) {
+                      <span id="campaign-budget-error" class="field-error">Enter zero or a whole Coins amount up to {{ maxBudget | number }}.</span>
+                    }
+                  </label>
+                </div>
+                <p id="campaign-date-help" class="muted">Both dates represent midnight UTC.</p>
+                <p><strong>Sponsorship disclosure</strong> · Sponsored by {{ editor.controls.sponsor.value }}</p>
+                @if (submitted() && editor.invalid) {
+                  <p class="field-error" role="alert">Check the highlighted fields before saving the demo draft.</p>
+                }
+                <div class="editor-actions">
+                  <button whButton type="submit">Save demo draft</button>
+                  <button whButton variant="outline" type="button" (click)="closeEditor()">Discard changes</button>
+                </div>
+              </form>
+            </section>
+          }
 
           <div class="detail-grid lower-details">
             <section aria-labelledby="campaign-ads-title">
@@ -112,12 +204,22 @@
             </section>
             <section aria-labelledby="campaign-preview-title">
               <h4 id="campaign-preview-title">Campaign preview</h4>
-              <div class="preview">
-                <p class="preview-label">Wayhunter · Sponsored demo</p>
-                <strong>{{ campaign.title }}</strong>
-                <p>{{ campaign.summary }}</p>
-                <p class="preview-label">Sponsored by {{ campaign.sponsor }} · {{ campaign.district }}</p>
-              </div>
+              @if (preview(); as draft) {
+                <div class="preview">
+                  <p class="preview-label">{{ editing() || savedDraft() ? 'Demo draft' : 'Wayhunter · Sponsored demo' }}</p>
+                  <strong>{{ draft.title || 'Untitled campaign' }}</strong>
+                  <p>{{ draft.content?.title || 'Select linked demo content' }} · {{ draft.category }}</p>
+                  @if (draft.content; as content) { <p>{{ content.summary }}</p> }
+                  <p class="preview-label">Sponsored by {{ draft.sponsor }}</p>
+                  <dl class="detail-grid">
+                    <div><dt>Start date (UTC)</dt><dd>{{ (draft.startUtc | date:'d MMM y':'UTC') ?? 'Enter a valid start date' }}</dd></div>
+                    <div><dt>End date (UTC)</dt><dd>{{ (draft.endUtc | date:'d MMM y':'UTC') ?? 'Enter a valid end date' }}</dd></div>
+                    <div><dt>Audience</dt><dd>{{ draft.audience }}</dd></div>
+                    <div><dt>District targeting</dt><dd>{{ draft.district || 'All districts' }}</dd></div>
+                    <div><dt>Coins budget</dt><dd>{{ draft.budgetCoins == null ? 'Enter a Coins amount' : ((draft.budgetCoins | number) + ' Coins') }}</dd></div>
+                  </dl>
+                </div>
+              }
             </section>
           </div>
         </section>
