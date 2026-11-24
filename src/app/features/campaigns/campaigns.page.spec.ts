@@ -31,11 +31,12 @@ describe('ADM-14 Campaigns Management', () => {
   it('renders five full-inventory cards, sorted dates, weighted performance and audit records', async () => {
     const { page, ids } = await openPage();
     expect(page.querySelector('.intro')?.textContent).toContain('Demo data');
-    expect(Array.from(page.querySelectorAll('.metric-value'), metric => metric.textContent)).toEqual(['6', '2', '1', '1', '1']);
-    expect(ids()).toHaveLength(6);
+    expect(Array.from(page.querySelectorAll('.metric-value'), metric => metric.textContent)).toEqual(['8', '2', '1', '1', '1']);
+    expect(ids()).toHaveLength(8);
     expect(Array.from(page.querySelectorAll('.performance dd'), metric => metric.textContent)).toEqual(['7,000', '300', '4.29%']);
     expect(Array.from(page.querySelectorAll('.schedule wh-status-badge'), badge => badge.textContent)).toEqual([
-      'Past window', 'Current window', 'Current window', 'Upcoming window', 'Upcoming window', 'Upcoming window',
+      'Elapsed window', 'Elapsed window', 'Current window', 'Current window', 'Current window',
+      'Upcoming window', 'Upcoming window', 'Upcoming window',
     ]);
     const audit = page.querySelector('wh-data-table')?.textContent;
     expect(audit).toContain('Schedule recorded');
@@ -57,12 +58,62 @@ describe('ADM-14 Campaigns Management', () => {
     expect(page.querySelector('wh-empty-state')?.textContent).toContain('No sample campaigns match');
     page.querySelector<HTMLButtonElement>('.filters button')!.click();
     harness.detectChanges();
-    expect(ids()).toHaveLength(6);
+    expect(ids()).toHaveLength(8);
     expect([search.value, status.value, category.value, dates.value]).toEqual(['', '', '', '']);
     change(search, 'cmp-203');
     expect(ids()).toEqual(['CMP-203']);
     change(search, 'kandy');
     expect(ids()).toEqual(['CMP-201', 'CMP-206']);
+  });
+
+  it('combines sponsor and audience filters with inventory filters and recalculates weighted performance', async () => {
+    const { harness, page, ids, change } = await openPage();
+    const [status, category, dates, sponsor, audience] = page.querySelectorAll<HTMLSelectElement>('.filters select');
+    const totals = () => Array.from(page.querySelectorAll('.performance dd'), metric => metric.textContent);
+    change(sponsor, 'Demo Ridge Outfitters');
+    expect(ids()).toEqual(['CMP-201', 'CMP-204', 'CMP-206']);
+    change(audience, 'Travelers exploring Kandy');
+    expect(ids()).toEqual(['CMP-201', 'CMP-206']);
+    expect(totals()).toEqual(['4,600', '204', '4.43%']);
+    change(status, 'Ended');
+    change(category, 'District pass');
+    change(dates, 'Elapsed window');
+    expect(ids()).toEqual(['CMP-206']);
+    expect(totals()).toEqual(['1,000', '60', '6.0%']);
+    change(dates, 'Current window');
+    expect(ids()).toEqual([]);
+    expect(totals()).toEqual([]);
+    expect(page.textContent).toContain('No matching campaigns to summarize.');
+    expect(page.textContent).toContain('Actual views, actions, and spend are unavailable.');
+    page.querySelector<HTMLButtonElement>('.filters button')!.click();
+    harness.detectChanges();
+    expect([status, category, dates, sponsor, audience].map(field => field.value)).toEqual(['', '', '', '', '']);
+    expect(totals()).toEqual(['7,000', '300', '4.29%']);
+    change(audience, 'Players browsing Matale');
+    expect(ids()).toEqual(['CMP-203', 'CMP-208']);
+  });
+
+  it('keeps stored lifecycle separate from schedule at the exact UTC start and end', async () => {
+    const { page, ids, change } = await openPage();
+    const [status, , dates] = page.querySelectorAll<HTMLSelectElement>('.filters select');
+    const state = (id: string) => {
+      const row = Array.from(page.querySelectorAll('tbody tr'))
+        .find(candidate => candidate.querySelector('.record-id')?.textContent === id)!;
+      return ['.stored-lifecycle', '.schedule-window'].map(selector => row.querySelector(selector)?.textContent);
+    };
+    expect(state('CMP-201')).toEqual(['Published', 'Current window']);
+    expect(state('CMP-206')).toEqual(['Published', 'Elapsed window']);
+    expect(state('CMP-207')).toEqual(['Paused', 'Current window']);
+    expect(state('CMP-208')).toEqual(['Archived', 'Elapsed window']);
+    change(status, 'Paused');
+    change(dates, 'Current window');
+    expect(ids()).toEqual(['CMP-207']);
+    expect(Array.from(page.querySelectorAll('.performance dd'), metric => metric.textContent))
+      .toEqual(['0', '0', 'Unavailable']);
+    expect(page.textContent).toContain('Matching sample campaigns have zero impressions.');
+    change(status, 'Archived');
+    change(dates, 'Elapsed window');
+    expect(ids()).toEqual(['CMP-208']);
   });
 
   it('shows the selected ad and sponsored preview, then restores focus on Escape', async () => {
@@ -202,6 +253,7 @@ describe('ADM-14 Campaigns Management', () => {
     expect(attempts).toBe(2);
     expect(page.querySelector('[role="alert"]')).toBeNull();
     expect(page.querySelector('wh-empty-state')?.textContent).toContain('No sample campaigns are available');
-    expect(page.querySelector('.performance')?.textContent).toContain('0.0%');
+    expect(page.querySelector('.performance')).toBeNull();
+    expect(page.textContent).toContain('No matching campaigns to summarize.');
   });
 });

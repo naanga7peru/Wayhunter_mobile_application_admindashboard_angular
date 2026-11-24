@@ -2,11 +2,12 @@ import { inject, Injectable } from '@angular/core';
 import { AdvertisementsDemoSource } from '../advertisements/data-access/advertisements-demo';
 import { Advertisement } from '../advertisements/models/advertisements-view';
 
-export const campaignStatuses = ['Active', 'Scheduled', 'Pending Review', 'Draft', 'Ended'] as const;
+export const campaignStatuses = ['Active', 'Scheduled', 'Pending Review', 'Draft', 'Ended', 'Paused', 'Archived'] as const;
 export const campaignCategories = ['Sponsored game', 'District pass', 'Verified mission', 'Promoted place'] as const;
 
 type CampaignStatus = typeof campaignStatuses[number];
 type CampaignCategory = typeof campaignCategories[number];
+type SampleCampaignLifecycle = 'Draft' | 'Scheduled' | 'Published' | 'Paused' | 'Archived';
 
 export interface Campaign {
   readonly id: string;
@@ -14,6 +15,7 @@ export interface Campaign {
   readonly sponsor: string;
   readonly category: CampaignCategory;
   readonly status: CampaignStatus;
+  readonly lifecycle: SampleCampaignLifecycle;
   readonly district: string;
   readonly audience: string;
   readonly start: string;
@@ -45,7 +47,7 @@ export interface CampaignsSnapshot {
 const campaigns: readonly Campaign[] = [
   {
     id: 'CMP-201', title: 'Ridge Trail Spotlight', sponsor: 'Demo Ridge Outfitters',
-    category: 'Promoted place', status: 'Active', district: 'Kandy', audience: 'Travelers exploring Kandy',
+    category: 'Promoted place', status: 'Active', lifecycle: 'Published', district: 'Kandy', audience: 'Travelers exploring Kandy',
     start: '2026-11-10', end: '2026-12-12', impressions: 3600, clicks: 144, adIds: ['AD-101'],
     budgetCoins: 5000,
     summary: 'Explore a sample collection of ridge walks and viewpoints.',
@@ -53,7 +55,7 @@ const campaigns: readonly Campaign[] = [
   },
   {
     id: 'CMP-202', title: 'Coastal Discovery Pass', sponsor: 'Demo Coast Collective',
-    category: 'District pass', status: 'Active', district: 'Galle', audience: 'Travelers exploring Galle',
+    category: 'District pass', status: 'Active', lifecycle: 'Published', district: 'Galle', audience: 'Travelers exploring Galle',
     start: '2026-11-03', end: '2026-12-01', impressions: 2400, clicks: 96, adIds: ['AD-102'],
     budgetCoins: 3000,
     summary: 'Browse an illustrative itinerary of coastal walks.',
@@ -61,7 +63,7 @@ const campaigns: readonly Campaign[] = [
   },
   {
     id: 'CMP-203', title: 'Forest Loop Challenge', sponsor: 'Demo Forest Lab',
-    category: 'Sponsored game', status: 'Pending Review', district: 'Matale', audience: 'Players browsing Matale',
+    category: 'Sponsored game', status: 'Pending Review', lifecycle: 'Draft', district: 'Matale', audience: 'Players browsing Matale',
     start: '2026-12-01', end: '2026-12-21', impressions: 0, clicks: 0, adIds: ['AD-103'],
     budgetCoins: 2500,
     summary: 'Preview a sponsored discovery challenge along a fictional forest loop.',
@@ -69,7 +71,7 @@ const campaigns: readonly Campaign[] = [
   },
   {
     id: 'CMP-204', title: 'Highland Sunrise Series', sponsor: 'Demo Ridge Outfitters',
-    category: 'Promoted place', status: 'Scheduled', district: 'Nuwara Eliya', audience: 'Travelers exploring Nuwara Eliya',
+    category: 'Promoted place', status: 'Scheduled', lifecycle: 'Scheduled', district: 'Nuwara Eliya', audience: 'Travelers exploring Nuwara Eliya',
     start: '2026-12-02', end: '2026-12-23', impressions: 0, clicks: 0, adIds: ['AD-105'],
     budgetCoins: 4000,
     summary: 'Discover a sample set of highland viewpoints for early walks.',
@@ -77,7 +79,7 @@ const campaigns: readonly Campaign[] = [
   },
   {
     id: 'CMP-205', title: 'Canopy Field Journal', sponsor: 'Demo Canopy Studio',
-    category: 'Verified mission', status: 'Draft', district: 'Ratnapura', audience: 'Hunters exploring Ratnapura',
+    category: 'Verified mission', status: 'Draft', lifecycle: 'Draft', district: 'Ratnapura', audience: 'Hunters exploring Ratnapura',
     start: '2026-12-10', end: '2026-12-28', impressions: 0, clicks: 0, adIds: [],
     budgetCoins: 0,
     summary: 'Preview a fictional mission about documenting trail observations.',
@@ -85,11 +87,29 @@ const campaigns: readonly Campaign[] = [
   },
   {
     id: 'CMP-206', title: 'Autumn Trail Map', sponsor: 'Demo Ridge Outfitters',
-    category: 'District pass', status: 'Ended', district: 'Kandy', audience: 'Travelers exploring Kandy',
+    category: 'District pass', status: 'Ended', lifecycle: 'Published', district: 'Kandy', audience: 'Travelers exploring Kandy',
     start: '2026-10-05', end: '2026-10-31', impressions: 1000, clicks: 60, adIds: ['AD-110'],
     budgetCoins: 2000,
     summary: 'Browse an example of a past seasonal trail promotion.',
     reviewNote: 'The sample display window has ended.',
+  },
+  {
+    id: 'CMP-207', title: 'Canopy Observation Walk', sponsor: 'Demo Canopy Studio',
+    category: 'Verified mission', status: 'Paused', lifecycle: 'Paused',
+    district: 'Ratnapura', audience: 'Hunters exploring Ratnapura',
+    start: '2026-11-23', end: '2026-12-05', impressions: 0, clicks: 0, adIds: [],
+    budgetCoins: 0,
+    summary: 'Preview a sample field observation mission.',
+    reviewNote: 'The sample campaign is paused during its schedule window.',
+  },
+  {
+    id: 'CMP-208', title: 'Forest Trail Preview', sponsor: 'Demo Forest Lab',
+    category: 'Sponsored game', status: 'Archived', lifecycle: 'Archived',
+    district: 'Matale', audience: 'Players browsing Matale',
+    start: '2026-10-01', end: '2026-11-23', impressions: 0, clicks: 0, adIds: [],
+    budgetCoins: 0,
+    summary: 'Preview a retained sample trail challenge.',
+    reviewNote: 'The sample campaign is archived at the end of its schedule window.',
   },
 ];
 
@@ -110,6 +130,6 @@ export class CampaignsDemoSource {
 
   async load(): Promise<CampaignsSnapshot> {
     const { ads } = await this.advertisements.load();
-    return { asOf: '2026-11-23', campaigns, ads, history };
+    return { asOf: '2026-11-23T00:00:00Z', campaigns, ads, history };
   }
 }

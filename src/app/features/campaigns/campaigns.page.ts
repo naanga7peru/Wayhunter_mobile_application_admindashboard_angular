@@ -56,8 +56,9 @@ function options(allLabel: string, values: readonly string[]) {
 }
 
 function scheduleWindow(campaign: Campaign, asOf: string) {
-  if (campaign.end < asOf) return 'Past window';
-  if (campaign.start > asOf) return 'Upcoming window';
+  const now = Date.parse(asOf);
+  if (now >= Date.parse(campaign.end)) return 'Elapsed window';
+  if (now < Date.parse(campaign.start)) return 'Upcoming window';
   return 'Current window';
 }
 
@@ -84,6 +85,8 @@ export class CampaignsPage implements OnInit {
   protected readonly status = signal('');
   protected readonly category = signal('');
   protected readonly dateWindow = signal('');
+  protected readonly sponsor = signal('');
+  protected readonly audience = signal('');
   protected readonly selected = signal<Campaign | null>(null);
   protected readonly editing = signal(false);
   protected readonly submitted = signal(false);
@@ -111,11 +114,12 @@ export class CampaignsPage implements OnInit {
   protected readonly windowLabel = scheduleWindow;
   protected readonly tones: Record<Campaign['status'], StatusTone> = {
     Active: 'success', Scheduled: 'info', 'Pending Review': 'warning', Draft: 'neutral', Ended: 'neutral',
+    Paused: 'warning', Archived: 'neutral',
   };
 
   protected readonly statusOptions = options('All statuses', campaignStatuses);
   protected readonly categoryOptions = options('All categories', campaignCategories);
-  protected readonly windowOptions = options('All sample dates', ['Current window', 'Upcoming window', 'Past window']);
+  protected readonly windowOptions = options('All sample dates', ['Current window', 'Upcoming window', 'Elapsed window']);
 
   protected readonly snapshot = computed(() => {
     const state = this.state();
@@ -125,6 +129,8 @@ export class CampaignsPage implements OnInit {
   protected readonly campaignTypes = campaignCategories;
   protected readonly sponsors = computed(() => [...new Set(this.campaigns().map(campaign => campaign.sponsor))]);
   protected readonly audiences = computed(() => [...new Set(this.campaigns().map(campaign => campaign.audience))]);
+  protected readonly sponsorOptions = computed(() => options('All sponsors', this.sponsors()));
+  protected readonly audienceOptions = computed(() => options('All audiences', this.audiences()));
   protected readonly districts = computed(() => [...new Set(this.campaigns().map(campaign => campaign.district))]);
   protected readonly contentOptions = computed(() =>
     this.campaigns().filter(campaign => campaign.category === this.editorValue()?.category),
@@ -149,11 +155,15 @@ export class CampaignsPage implements OnInit {
     const status = this.status();
     const category = this.category();
     const dateWindow = this.dateWindow();
+    const sponsor = this.sponsor();
+    const audience = this.audience();
     const asOf = this.snapshot()?.asOf ?? '';
     return this.campaigns().filter(campaign =>
       (!status || campaign.status === status) &&
       (!category || campaign.category === category) &&
       (!dateWindow || scheduleWindow(campaign, asOf) === dateWindow) &&
+      (!sponsor || campaign.sponsor === sponsor) &&
+      (!audience || campaign.audience === audience) &&
       [campaign.id, campaign.title, campaign.sponsor, campaign.district].some(value => value.toLowerCase().includes(query)),
     );
   });
@@ -164,8 +174,9 @@ export class CampaignsPage implements OnInit {
     return this.snapshot()?.ads.filter(ad => ids.includes(ad.id)) ?? [];
   });
   protected readonly performance = computed(() => {
-    const impressions = this.campaigns().reduce((sum, campaign) => sum + campaign.impressions, 0);
-    const clicks = this.campaigns().reduce((sum, campaign) => sum + campaign.clicks, 0);
+    const campaigns = this.filtered();
+    const impressions = campaigns.reduce((sum, campaign) => sum + campaign.impressions, 0);
+    const clicks = campaigns.reduce((sum, campaign) => sum + campaign.clicks, 0);
     return { impressions, clicks, ctr: clickThroughRate(clicks, impressions) };
   });
   protected readonly auditKey = (event: CampaignAuditEvent) => event.id;
@@ -195,6 +206,8 @@ export class CampaignsPage implements OnInit {
     this.status.set('');
     this.category.set('');
     this.dateWindow.set('');
+    this.sponsor.set('');
+    this.audience.set('');
   }
 
   protected showDetails(campaign: Campaign, event: MouseEvent): void {
