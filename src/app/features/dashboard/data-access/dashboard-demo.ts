@@ -39,13 +39,8 @@ export function getDashboardDemo(range: DashboardRange): DashboardView {
   const length = Number(range);
   const selected = days.slice(-length);
   const previous = days.slice(-2 * length, -length);
-  const pending = {
-    hunters: sum(selected, 'hunters'),
-    hazards: sum(selected, 'hazards'),
-    redemptions: sum(selected, 'redemptions'),
-  };
-  const pendingTotal = pending.hunters + pending.hazards + pending.redemptions;
-  const previousPending = sum(previous, 'hunters') + sum(previous, 'hazards') + sum(previous, 'redemptions');
+  const reviewRequests = sum(selected, 'hunters') + sum(selected, 'hazards') + sum(selected, 'redemptions');
+  const previousReviewRequests = sum(previous, 'hunters') + sum(previous, 'hazards') + sum(previous, 'redemptions');
   const newUsers = sum(selected, 'newUsers');
   const totalUsers = 12_846;
   const trips = sum(selected, 'trips');
@@ -56,13 +51,12 @@ export function getDashboardDemo(range: DashboardRange): DashboardView {
 
   return {
     period: shortDate.format(selected[0].date) + ' – ' + shortDate.format(sampleEnd) + ' 2026',
-    pending,
     metrics: [
-      { label: 'Total users', value: totalUsers, detail: 'Accounts at period end', change: newUsers },
-      { label: 'Total trips', value: trips, detail: 'Trips in this period', change: trips - sum(previous, 'trips') },
-      { label: 'Pending approvals', value: pendingTotal, detail: 'Requests opened in this period', change: pendingTotal - previousPending },
-      { label: 'Active campaigns', value: campaigns, detail: 'Active campaigns started in period', change: campaigns - sum(previous, 'campaigns') },
-      { label: 'Voucher activity', value: vouchers, detail: 'Demo vouchers issued in period', change: vouchers - sum(previous, 'vouchers') },
+      { label: 'Sample total users', value: totalUsers, detail: 'Accounts at period end', change: newUsers },
+      { label: 'Sample trips', value: trips, detail: 'Trips in this period', change: trips - sum(previous, 'trips') },
+      { label: 'Sample review requests opened', value: reviewRequests, detail: 'Requests opened in this period', change: reviewRequests - previousReviewRequests },
+      { label: 'Sample campaign starts', value: campaigns, detail: 'Campaigns started in this period', change: campaigns - sum(previous, 'campaigns') },
+      { label: 'Sample vouchers issued', value: vouchers, detail: 'Demo vouchers issued in this period', change: vouchers - sum(previous, 'vouchers') },
     ],
     points: Array.from({ length: bucketCount }, (_, index) => {
       const bucket = selected.slice(index * bucketSize, (index + 1) * bucketSize);

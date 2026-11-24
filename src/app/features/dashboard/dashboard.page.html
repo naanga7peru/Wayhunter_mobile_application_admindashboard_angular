@@ -3,7 +3,7 @@
     <div>
       <wh-status-badge tone="warning" label="Demo / Sample Data" />
       <h2>Welcome to WayHunter</h2>
-      <p>Track travel activity, campaign performance, and the reviews that need your attention.</p>
+      <p>Explore sample travel activity, campaign starts, and administrative events.</p>
     </div>
     <div class="range-panel">
       <wh-filter-select label="Sample time range" [options]="ranges" [value]="range()"
@@ -51,25 +51,21 @@
                      [columns]="activityColumns" [rowKey]="activityKey" />
     </wh-card>
 
-    <wh-card heading="Pending actions">
-      <p class="muted">Sample reviews opened in this period.</p>
+    <wh-card heading="Review modules">
       <ul class="review-list">
         <li>
           <a routerLink="../hunter-verification">
             <span>Hunter verification</span>
-            <wh-status-badge tone="warning" [label]="view().pending.hunters + ' pending'" />
           </a>
         </li>
         <li>
           <a routerLink="../hazards">
             <span>Reported hazards</span>
-            <wh-status-badge tone="warning" [label]="view().pending.hazards + ' pending'" />
           </a>
         </li>
         <li>
           <a routerLink="../redemptions-settlements">
             <span>Voucher redemptions</span>
-            <wh-status-badge tone="warning" [label]="view().pending.redemptions + ' pending'" />
           </a>
         </li>
       </ul>
