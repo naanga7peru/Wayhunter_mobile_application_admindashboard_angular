@@ -25,7 +25,11 @@ describe('ADM-14 Campaigns Management', () => {
     function button(label: string) {
       return page.querySelector<HTMLButtonElement>('button[aria-label="' + label + '"]')!;
     }
-    return { harness, page, ids, change, refresh, button };
+    function click(label: string) {
+      Array.from(page.querySelectorAll('button')).find(element => element.textContent?.trim() === label)!.click();
+      harness.detectChanges();
+    }
+    return { harness, page, ids, change, refresh, button, click };
   }
 
   it('renders five full-inventory cards, sorted dates, weighted performance and audit records', async () => {
@@ -116,6 +120,25 @@ describe('ADM-14 Campaigns Management', () => {
     expect(ids()).toEqual(['CMP-208']);
   });
 
+  it('includes CMP-206 in the elapsed window and excludes it from Active without changing its lifecycle', async () => {
+    const { page, ids, change } = await openPage();
+    const [status, , dates] = page.querySelectorAll<HTMLSelectElement>('.filters select');
+    change(dates, 'Elapsed window');
+    expect(ids()).toContain('CMP-206');
+    change(status, 'Active');
+    expect(status.value).toBe('Active');
+    expect(ids()).not.toContain('CMP-206');
+    change(dates, '');
+    expect(ids()).toContain('CMP-201');
+    expect(ids()).not.toContain('CMP-206');
+    change(status, 'Ended');
+    change(dates, 'Elapsed window');
+    expect(ids()).toEqual(['CMP-206']);
+    const row = page.querySelector('tbody tr')!;
+    expect(row.querySelector('.stored-lifecycle')?.textContent).toBe('Published');
+    expect(row.querySelector('.schedule-window')?.textContent).toBe('Elapsed window');
+  });
+
   it('shows the selected ad and sponsored preview, then restores focus on Escape', async () => {
     const { harness, page, button } = await openPage();
     const trigger = button('View details for CMP-201');
@@ -149,11 +172,7 @@ describe('ADM-14 Campaigns Management', () => {
   });
 
   it('prefills the editor and keeps saved demo drafts isolated from inventory and other records', async () => {
-    const { harness, page, button, change } = await openPage();
-    const click = (label: string) => {
-      Array.from(page.querySelectorAll('button')).find(element => element.textContent?.trim() === label)!.click();
-      harness.detectChanges();
-    };
+    const { harness, page, button, change, click } = await openPage();
     const field = (name: string) => page.querySelector<HTMLInputElement | HTMLSelectElement>(
       '[formControlName="' + name + '"]',
     )!;
@@ -236,6 +255,59 @@ describe('ADM-14 Campaigns Management', () => {
     }
     change(field('budgetCoins'), '1');
     expect(page.querySelector('#campaign-editor [role="alert"]')).toBeNull();
+  });
+
+  it('preserves the saved preview through invalid Coins submissions and saves a corrected budget only to that preview', async () => {
+    const { harness, page, ids, button, change, click } = await openPage();
+    const inventory = () => ({
+      ids: ids(),
+      table: page.querySelector('table')?.textContent,
+      counts: Array.from(page.querySelectorAll('.metric-value'), metric => metric.textContent),
+    });
+    const originalInventory = inventory();
+    const preview = () => page.querySelector('#campaign-details .preview')?.textContent;
+    const budget = () => page.querySelector<HTMLInputElement>('#campaign-editor [formControlName="budgetCoins"]')!;
+    const showDetails = (id: string) => {
+      button('View details for ' + id).click();
+      harness.detectChanges();
+    };
+    showDetails('CMP-202');
+    const otherPreview = preview();
+    expect(otherPreview).toContain('3,000 Coins');
+    showDetails('CMP-201');
+    click('Edit demo campaign');
+    change(budget(), '5500');
+    click('Save demo draft');
+    const savedPreview = preview();
+    expect(savedPreview).toContain('5,500 Coins');
+
+    click('Edit demo campaign');
+    for (const invalid of ['-1', '1.5', '9007199254740992']) {
+      change(budget(), invalid);
+      click('Save demo draft');
+      expect(page.querySelector('#campaign-editor')).not.toBeNull();
+      expect(budget().getAttribute('aria-invalid')).toBe('true');
+      expect(page.querySelector('#campaign-budget-error')).not.toBeNull();
+    }
+    click('Discard changes');
+    expect(page.querySelector('#campaign-editor')).toBeNull();
+    expect(preview()).toBe(savedPreview);
+
+    click('Edit demo campaign');
+    expect(budget().value).toBe('5500');
+    change(budget(), '-1');
+    click('Save demo draft');
+    change(budget(), '0');
+    expect(page.querySelector('#campaign-budget-error')).toBeNull();
+    click('Save demo draft');
+    expect(page.querySelector('#campaign-editor')).toBeNull();
+    expect(preview()).toContain('0 Coins');
+    expect(preview()).not.toContain('5,500 Coins');
+    expect(inventory()).toEqual(originalInventory);
+    showDetails('CMP-202');
+    expect(preview()).toBe(otherPreview);
+    showDetails('CMP-201');
+    expect(preview()).toContain('0 Coins');
   });
 
   it('announces loading, retries a failure, and distinguishes a genuinely empty inventory', async () => {
