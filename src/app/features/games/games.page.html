@@ -4,144 +4,149 @@
   }
   <h2>Games &amp; Anti-Cheat</h2>
   @if (demoPreview) {
-    <p>All submissions and creator identities shown here are synthetic. Creation decisions are preview-only.</p>
+    <p>Creation queue submissions and creator identities are synthetic. Creation decisions are preview-only.</p>
   }
 </header>
 
-<wh-card heading="Pending Game Creation Queue">
-  @if (!demoPreview) {
-    <wh-empty-state message="The live game creation queue is unavailable." />
-  } @else {
-    @let queue = state();
-    @switch (queue.kind) {
-      @case ('loading') {
-        <wh-loading-state message="Loading sample submissions…" />
-      }
-      @case ('error') {
-        <wh-error-state message="Sample submissions could not be loaded." retryLabel="Retry" (retry)="load()" />
-      }
-      @case ('ready') {
-        <div class="queue-toolbar">
-          <p class="pending-total"><strong>{{ queue.items.length }}</strong> Pending submissions</p>
-          <wh-search-input
-            label="Search submissions"
-            placeholder="Game title, creator name or ID"
-            [value]="search()"
-            (valueChange)="updateSearch($event)"
-          />
-        </div>
-        @if (filtered().length) {
-          <p class="results" role="status">{{ filtered().length }} of {{ queue.items.length }} sample submissions shown</p>
-          <p class="scroll-hint">Scroll the table to see all columns.</p>
-          <div class="table-scroll" role="region" aria-label="Pending game submissions" tabindex="0">
-            <table aria-label="Pending game creation queue">
-              <thead>
-                <tr>
-                  <th scope="col">Game title</th>
-                  <th scope="col">Creator name</th>
-                  <th scope="col">Creator user ID</th>
-                  <th scope="col">Submitted (UTC)</th>
-                  <th scope="col">Review status</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (item of filtered(); track item.gameId) {
-                  <tr [class.active]="selected()?.gameId === item.gameId">
-                    <th scope="row">
-                      <button
-                        #trigger
-                        type="button"
-                        class="title-button"
-                        [attr.aria-label]="'View details for ' + item.gameTitle"
-                        [attr.aria-expanded]="selected()?.gameId === item.gameId"
-                        aria-controls="game-creation-details"
-                        (click)="showDetails(item, trigger, detailsHeading)"
-                      >{{ item.gameTitle }}</button>
-                    </th>
-                    <td>{{ item.creatorNameSnapshot }}</td>
-                    <td class="creator-id">{{ item.creatorUserId }}</td>
-                    <td><time [attr.datetime]="item.submittedAtUtc">{{ item.submittedAtUtc | date:'dd MMM y, HH:mm:ss':'UTC' }} UTC</time></td>
-                    <td><wh-status-badge [label]="pendingStatus" tone="warning" /></td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        } @else if (queue.items.length) {
-          <wh-empty-state message="No sample submissions match your search." />
-        } @else {
-          <wh-empty-state message="There are no pending sample submissions." />
-        }
-
-        <section id="game-creation-details" class="details" aria-labelledby="game-creation-details-title" (keydown.escape)="handleEscape($event)">
-          <h3 #detailsHeading id="game-creation-details-title" tabindex="-1">Submission details</h3>
-          @if (selected(); as item) {
-            <div class="details-content">
-              <div class="details-title">
-                <p>{{ item.gameTitle }}</p>
-                <wh-status-badge [label]="pendingStatus" tone="warning" />
-              </div>
-              <dl>
-                <div><dt>Game ID</dt><dd>{{ item.gameId }}</dd></div>
-                <div><dt>Creator name</dt><dd>{{ item.creatorNameSnapshot }}</dd></div>
-                <div><dt>Creator user ID</dt><dd>{{ item.creatorUserId }}</dd></div>
-                <div><dt>Submitted (UTC)</dt><dd><time [attr.datetime]="item.submittedAtUtc">{{ item.submittedAtUtc | date:'dd MMM y, HH:mm:ss':'UTC' }} UTC</time></dd></div>
-              </dl>
-              <div class="decision-actions">
-                <button whButton variant="outline" aria-controls="creation-decision-preview"
-                  [attr.aria-expanded]="decision() === 'approve'"
-                  (click)="openDecision('approve', $event, decisionHeading)">Preview approval</button>
-                <button whButton variant="outline" aria-controls="creation-decision-preview"
-                  [attr.aria-expanded]="decision() === 'reject'"
-                  (click)="openDecision('reject', $event, decisionHeading)">Preview rejection</button>
-              </div>
-              <section id="creation-decision-preview" class="decision-preview" aria-labelledby="creation-decision-title">
-                <h4 #decisionHeading id="creation-decision-title" tabindex="-1">Creation decision preview</h4>
-                <p>Submission is unavailable. Previewing a decision leaves the queue unchanged.</p>
-                @switch (decision()) {
-                  @case ('approve') {
-                    <div class="decision-fields">
-                      <h5>Approval confirmation</h5>
-                      <p>Confirm that {{ item.gameTitle }} by {{ item.creatorNameSnapshot }} is the creation submission you intend to approve.</p>
-                      <div class="decision-actions">
-                        <button whButton disabled>Approve creation</button>
-                        <button whButton variant="outline" (click)="cancelDecision()">Cancel preview</button>
-                      </div>
-                    </div>
-                  }
-                  @case ('reject') {
-                    <form class="decision-fields" novalidate (submit)="checkReason($event, rejectionReason)">
-                      <h5>Rejection reason preview</h5>
-                      <label for="creation-rejection-reason">Rejection reason (required)</label>
-                      <p id="creation-reason-help">Enter 1–1,000 characters. Leading and trailing whitespace is ignored.</p>
-                      <textarea #rejectionReason id="creation-rejection-reason" rows="4" required
-                        [value]="reason()"
-                        [attr.aria-invalid]="reasonChecked() && reasonError() ? 'true' : null"
-                        [attr.aria-describedby]="reasonChecked() && reasonError()
-                          ? 'creation-reason-help creation-reason-feedback' : 'creation-reason-help'"
-                        (input)="reason.set(rejectionReason.value); reasonChecked.set(false)"></textarea>
-                      <p>{{ reasonLength() }} / {{ reasonLimit }} characters after trimming</p>
-                      <p id="creation-reason-feedback" role="status" [class.reason-error]="reasonChecked() && reasonError()">
-                        @if (reasonChecked()) {
-                          {{ reasonError() || 'Reason meets the preview requirements.' }}
-                        }
-                      </p>
-                      <div class="decision-actions">
-                        <button whButton type="submit" variant="secondary">Check reason</button>
-                        <button whButton disabled>Reject creation</button>
-                        <button whButton variant="outline" (click)="cancelDecision()">Cancel preview</button>
-                      </div>
-                    </form>
-                  }
-                }
-              </section>
-              <button whButton type="button" variant="outline" (click)="closeDetails()">Close details</button>
-            </div>
-          } @else {
-            <p>Select a game title to view the submission.</p>
+<wh-games-management-foundation [creationSection]="creationSection">
+  <section [attr.aria-labelledby]="creationSection.id">
+    <wh-card>
+      <h2 class="queue-heading" [id]="creationSection.id" tabindex="-1">Pending Game Creation Queue</h2>
+      @if (!demoPreview) {
+        <wh-empty-state message="The live game creation queue is unavailable." />
+      } @else {
+        @let queue = state();
+        @switch (queue.kind) {
+          @case ('loading') {
+            <wh-loading-state message="Loading sample submissions…" />
           }
-        </section>
+          @case ('error') {
+            <wh-error-state message="Sample submissions could not be loaded." retryLabel="Retry" (retry)="load()" />
+          }
+          @case ('ready') {
+            <div class="queue-toolbar">
+              <p class="pending-total"><strong>{{ queue.items.length }}</strong> Pending submissions</p>
+              <wh-search-input
+                label="Search submissions"
+                placeholder="Game title, creator name or ID"
+                [value]="search()"
+                (valueChange)="updateSearch($event)"
+              />
+            </div>
+            @if (filtered().length) {
+              <p class="results" role="status">{{ filtered().length }} of {{ queue.items.length }} sample submissions shown</p>
+              <p class="scroll-hint">Scroll the table to see all columns.</p>
+              <div class="table-scroll" role="region" aria-label="Pending game submissions" tabindex="0">
+                <table aria-label="Pending game creation queue">
+                  <thead>
+                    <tr>
+                      <th scope="col">Game title</th>
+                      <th scope="col">Creator name</th>
+                      <th scope="col">Creator user ID</th>
+                      <th scope="col">Submitted (UTC)</th>
+                      <th scope="col">Review status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (item of filtered(); track item.gameId) {
+                      <tr [class.active]="selected()?.gameId === item.gameId">
+                        <th scope="row">
+                          <button
+                            #trigger
+                            type="button"
+                            class="title-button"
+                            [attr.aria-label]="'View details for ' + item.gameTitle"
+                            [attr.aria-expanded]="selected()?.gameId === item.gameId"
+                            aria-controls="game-creation-details"
+                            (click)="showDetails(item, trigger, detailsHeading)"
+                          >{{ item.gameTitle }}</button>
+                        </th>
+                        <td>{{ item.creatorNameSnapshot }}</td>
+                        <td class="creator-id">{{ item.creatorUserId }}</td>
+                        <td><time [attr.datetime]="item.submittedAtUtc">{{ item.submittedAtUtc | date:'dd MMM y, HH:mm:ss':'UTC' }} UTC</time></td>
+                        <td><wh-status-badge [label]="pendingStatus" tone="warning" /></td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            } @else if (queue.items.length) {
+              <wh-empty-state message="No sample submissions match your search." />
+            } @else {
+              <wh-empty-state message="There are no pending sample submissions." />
+            }
+
+            <section id="game-creation-details" class="details" aria-labelledby="game-creation-details-title" (keydown.escape)="handleEscape($event)">
+              <h3 #detailsHeading id="game-creation-details-title" tabindex="-1">Submission details</h3>
+              @if (selected(); as item) {
+                <div class="details-content">
+                  <div class="details-title">
+                    <p>{{ item.gameTitle }}</p>
+                    <wh-status-badge [label]="pendingStatus" tone="warning" />
+                  </div>
+                  <dl>
+                    <div><dt>Game ID</dt><dd>{{ item.gameId }}</dd></div>
+                    <div><dt>Creator name</dt><dd>{{ item.creatorNameSnapshot }}</dd></div>
+                    <div><dt>Creator user ID</dt><dd>{{ item.creatorUserId }}</dd></div>
+                    <div><dt>Submitted (UTC)</dt><dd><time [attr.datetime]="item.submittedAtUtc">{{ item.submittedAtUtc | date:'dd MMM y, HH:mm:ss':'UTC' }} UTC</time></dd></div>
+                  </dl>
+                  <div class="decision-actions">
+                    <button whButton variant="outline" aria-controls="creation-decision-preview"
+                      [attr.aria-expanded]="decision() === 'approve'"
+                      (click)="openDecision('approve', $event, decisionHeading)">Preview approval</button>
+                    <button whButton variant="outline" aria-controls="creation-decision-preview"
+                      [attr.aria-expanded]="decision() === 'reject'"
+                      (click)="openDecision('reject', $event, decisionHeading)">Preview rejection</button>
+                  </div>
+                  <section id="creation-decision-preview" class="decision-preview" aria-labelledby="creation-decision-title">
+                    <h4 #decisionHeading id="creation-decision-title" tabindex="-1">Creation decision preview</h4>
+                    <p>Submission is unavailable. Previewing a decision leaves the queue unchanged.</p>
+                    @switch (decision()) {
+                      @case ('approve') {
+                        <div class="decision-fields">
+                          <h5>Approval confirmation</h5>
+                          <p>Confirm that {{ item.gameTitle }} by {{ item.creatorNameSnapshot }} is the creation submission you intend to approve.</p>
+                          <div class="decision-actions">
+                            <button whButton disabled>Approve creation</button>
+                            <button whButton variant="outline" (click)="cancelDecision()">Cancel preview</button>
+                          </div>
+                        </div>
+                      }
+                      @case ('reject') {
+                        <form class="decision-fields" novalidate (submit)="checkReason($event, rejectionReason)">
+                          <h5>Rejection reason preview</h5>
+                          <label for="creation-rejection-reason">Rejection reason (required)</label>
+                          <p id="creation-reason-help">Enter 1–1,000 characters. Leading and trailing whitespace is ignored.</p>
+                          <textarea #rejectionReason id="creation-rejection-reason" rows="4" required
+                            [value]="reason()"
+                            [attr.aria-invalid]="reasonChecked() && reasonError() ? 'true' : null"
+                            [attr.aria-describedby]="reasonChecked() && reasonError()
+                              ? 'creation-reason-help creation-reason-feedback' : 'creation-reason-help'"
+                            (input)="reason.set(rejectionReason.value); reasonChecked.set(false)"></textarea>
+                          <p>{{ reasonLength() }} / {{ reasonLimit }} characters after trimming</p>
+                          <p id="creation-reason-feedback" role="status" [class.reason-error]="reasonChecked() && reasonError()">
+                            @if (reasonChecked()) {
+                              {{ reasonError() || 'Reason meets the preview requirements.' }}
+                            }
+                          </p>
+                          <div class="decision-actions">
+                            <button whButton type="submit" variant="secondary">Check reason</button>
+                            <button whButton disabled>Reject creation</button>
+                            <button whButton variant="outline" (click)="cancelDecision()">Cancel preview</button>
+                          </div>
+                        </form>
+                      }
+                    }
+                  </section>
+                  <button whButton type="button" variant="outline" (click)="closeDetails()">Close details</button>
+                </div>
+              } @else {
+                <p>Select a game title to view the submission.</p>
+              }
+            </section>
+          }
+        }
       }
-    }
-  }
-</wh-card>
+    </wh-card>
+  </section>
+</wh-games-management-foundation>

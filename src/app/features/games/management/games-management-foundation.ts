@@ -16,7 +16,11 @@ import { UiStatusBadge } from '../../../shared/ui/status-badge';
   `,
   styles: `
     :host { display: block; min-width: 0; }
-    h3 { margin: 0 0 1rem; font-size: 1.125rem; scroll-margin-block-start: 1rem; }
+    h3 {
+      margin: 0 0 1rem;
+      font-size: 1.125rem;
+      scroll-margin-block-start: calc(var(--topbar-height, 0px) + 1rem);
+    }
     h3:focus-visible { outline: 2px solid var(--accent); outline-offset: .25rem; }
   `,
 })
@@ -36,6 +40,8 @@ export class GamesContractSection {
 })
 export class GamesManagementFoundation {
   private readonly document = inject(DOCUMENT);
+
+  readonly creationSection = input<{ readonly id: string; readonly heading: string }>();
 
   protected readonly sections = [
     {

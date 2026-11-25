@@ -7,6 +7,7 @@ import { UiSearchInput } from '../../shared/ui/search-input';
 import { UiEmptyState, UiErrorState, UiLoadingState } from '../../shared/ui/states';
 import { UiStatusBadge } from '../../shared/ui/status-badge';
 import { GAME_CREATION_QUEUE_SOURCE, GameAdminQueueItemDto } from './game-creation-queue';
+import { GamesManagementFoundation } from './management/games-management-foundation';
 
 type QueueState =
   | { kind: 'loading' }
@@ -17,11 +18,15 @@ type QueueState =
   standalone: true,
   selector: 'wayhunter-games-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, UiButton, UiCard, UiSearchInput, UiEmptyState, UiErrorState, UiLoadingState, UiStatusBadge],
+  imports: [DatePipe, GamesManagementFoundation, UiButton, UiCard, UiSearchInput, UiEmptyState, UiErrorState, UiLoadingState, UiStatusBadge],
   templateUrl: './games.page.html',
   styleUrl: './games.page.scss',
 })
 export class GamesPage {
+  protected readonly creationSection = {
+    id: 'adm10-creation-review',
+    heading: 'Game Creation Review Queue',
+  };
   private readonly source = inject(GAME_CREATION_QUEUE_SOURCE);
   private readonly pendingTasks = inject(PendingTasks);
   protected readonly demoPreview = isDevMode() && inject(ActivatedRoute).parent?.routeConfig?.path === 'preview';

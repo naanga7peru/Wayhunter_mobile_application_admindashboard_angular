@@ -1,11 +1,13 @@
 <section class="workspace" aria-labelledby="adm10-management-heading">
-  <header class="workspace-header">
-    <h2 id="adm10-management-heading">Games Management</h2>
-    <wh-status-badge label="Backend integration pending" tone="warning" />
-  </header>
-
-  <nav aria-label="Games management sections">
+  <nav [attr.aria-label]="creationSection() ? 'Games workspace sections' : 'Games management sections'">
     <ul>
+      @if (creationSection(); as section) {
+        <li>
+          <a [attr.href]="sectionLink(section.id)" (click)="jumpToSection($event, section.id)">
+            {{ section.heading }}
+          </a>
+        </li>
+      }
       @for (section of sections; track section.id) {
         <li>
           <a [attr.href]="sectionLink(section.id)" (click)="jumpToSection($event, section.id)">
@@ -15,6 +17,13 @@
       }
     </ul>
   </nav>
+
+  <ng-content />
+
+  <header class="workspace-header">
+    <h2 id="adm10-management-heading">Games Management</h2>
+    <wh-status-badge label="Backend integration pending" tone="warning" />
+  </header>
 
   <div class="review-grid">
     @for (section of sections; track section.id) {
