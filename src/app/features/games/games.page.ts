@@ -29,6 +29,20 @@ export class GamesPage {
   protected readonly search = signal('');
   private readonly selectedId = signal<string | null>(null);
   private detailsTrigger?: HTMLButtonElement;
+  private decisionTrigger?: HTMLButtonElement;
+  protected readonly decision = signal<'approve' | 'reject' | null>(null);
+  protected readonly reason = signal('');
+  protected readonly reasonChecked = signal(false);
+  protected readonly reasonLimit = 1000;
+  // Match .NET string.Trim() whitespace and UTF-16 length.
+  protected readonly reasonLength = computed(() =>
+    this.reason().replace(/^\p{White_Space}+|\p{White_Space}+$/gu, '').length,
+  );
+  protected readonly reasonError = computed(() => {
+    if (this.reasonLength() === 0) return 'Enter a rejection reason.';
+    if (this.reasonLength() > this.reasonLimit) return 'Use 1,000 characters or fewer after trimming.';
+    return '';
+  });
 
   protected readonly pendingStatus = 'Pending review';
   protected readonly filtered = computed(() => {
@@ -65,18 +79,56 @@ export class GamesPage {
     if (!this.selected()) {
       this.selectedId.set(null);
       this.detailsTrigger = undefined;
+      this.resetDecision();
     }
   }
 
   protected showDetails(item: GameAdminQueueItemDto, trigger: HTMLButtonElement, heading: HTMLElement): void {
+    this.resetDecision();
     this.selectedId.set(item.gameId);
     this.detailsTrigger = trigger;
     heading.focus();
   }
 
   protected closeDetails(): void {
+    this.resetDecision();
     this.selectedId.set(null);
     this.detailsTrigger?.focus();
     this.detailsTrigger = undefined;
+  }
+
+  protected openDecision(
+    decision: 'approve' | 'reject', event: MouseEvent, heading: HTMLElement,
+  ): void {
+    this.resetDecision();
+    this.decisionTrigger = event.currentTarget as HTMLButtonElement;
+    this.decision.set(decision);
+    heading.focus();
+  }
+
+  protected cancelDecision(): void {
+    this.decisionTrigger?.focus();
+    this.resetDecision();
+  }
+
+  protected handleEscape(event: Event): void {
+    if (!this.selected()) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (this.decision()) this.cancelDecision();
+    else this.closeDetails();
+  }
+
+  protected checkReason(event: Event, field: HTMLTextAreaElement): void {
+    event.preventDefault();
+    this.reasonChecked.set(true);
+    if (this.reasonError()) field.focus();
+  }
+
+  private resetDecision(): void {
+    this.decision.set(null);
+    this.decisionTrigger = undefined;
+    this.reason.set('');
+    this.reasonChecked.set(false);
   }
 }
