@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { vi } from 'vitest';
@@ -6,6 +7,7 @@ import { routes } from '../../app.routes';
 import { csvCell, demoCsv } from './data-access/reports-analytics-csv';
 import { ReportsAnalyticsDemoSource } from './data-access/reports-analytics-demo';
 import { buildReport, changeLabel, ReportsSnapshot, shiftDate } from './models/reports-analytics-view';
+import { ReportsAnalyticsPage } from './reports-analytics.page';
 
 const demo = new ReportsAnalyticsDemoSource();
 const fixture = () => demo.load();
@@ -159,7 +161,7 @@ describe('ADM-15 Reports & Analytics', () => {
   });
 
   it('downloads exactly the displayed summary rows for the selected report scope', async () => {
-    const { page, date, category, set } = await openPage();
+    const { harness, page, date, category, set } = await openPage();
     set(date, '7');
     set(category, 'Users');
     const report = buildReport(await fixture(), 7, 'Users');
@@ -176,7 +178,10 @@ describe('ADM-15 Reports & Analytics', () => {
     vi.useFakeTimers();
     try {
       Array.from(page.querySelectorAll('button')).find(button => button.textContent?.includes('Export Demo CSV'))!.click();
+      harness.detectChanges();
+      expect(page.querySelector('.summary-actions + [role="status"]')?.textContent).toContain('CSV download started.');
       expect(filename).toBe('wayhunter-fictional-demo-report-7d.csv');
+      expect(document.querySelector('a[download]')).toBeNull();
       const blob = create.mock.calls[0][0];
       expect(blob.type).toBe('text/csv;charset=utf-8');
       const csv = await blob.text();
@@ -187,6 +192,110 @@ describe('ADM-15 Reports & Analytics', () => {
       vi.runOnlyPendingTimers();
       expect(revoke).toHaveBeenCalledWith('blob:sample');
     } finally {
+      vi.useRealTimers();
+      click.mockRestore();
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it.each(['object URL creation', 'link activation'])('recovers from %s failure', async failure => {
+    const { harness, page, date, category, set } = await openPage();
+    const create = vi.fn(() => 'blob:sample');
+    const revoke = vi.fn();
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    const fail = () => { throw new Error('Download setup failed'); };
+    if (failure === 'object URL creation') create.mockImplementationOnce(fail);
+    else click.mockImplementationOnce(fail);
+
+    vi.stubGlobal('URL', class extends URL {
+      static override createObjectURL = create;
+      static override revokeObjectURL = revoke;
+    });
+    vi.useFakeTimers();
+    const button = (label: string) => Array.from(page.querySelectorAll('button'))
+      .find(candidate => candidate.textContent?.includes(label))!;
+    const exportCsv = () => {
+      button('Export Demo CSV').click();
+      harness.detectChanges();
+    };
+    try {
+      exportCsv();
+      expect(page.querySelector('[role="alert"]')?.textContent)
+        .toContain('CSV export could not be started. Please try again.');
+      expect(button('Export Demo CSV').disabled).toBe(false);
+      expect(click).toHaveBeenCalledTimes(failure === 'link activation' ? 1 : 0);
+      expect(revoke).toHaveBeenCalledTimes(failure === 'link activation' ? 1 : 0);
+      if (failure === 'link activation') expect(revoke).toHaveBeenCalledWith('blob:sample');
+      expect(document.querySelector('a[download]')).toBeNull();
+
+      exportCsv();
+      expect(page.querySelector('[role="alert"]')?.textContent?.trim()).toBe('');
+      const status = () => page.querySelector('.summary-actions + [role="status"]')?.textContent?.trim();
+      expect(status()).toContain('CSV download started.');
+      expect(document.querySelector('a[download]')).toBeNull();
+      vi.runOnlyPendingTimers();
+      expect(revoke).toHaveBeenCalledTimes(failure === 'link activation' ? 2 : 1);
+      expect(revoke).toHaveBeenLastCalledWith('blob:sample');
+
+      set(date, '7');
+      expect(status()).toBe('');
+      exportCsv();
+      set(category, 'Trips');
+      expect(status()).toBe('');
+      exportCsv();
+      button('Reset filters').click();
+      harness.detectChanges();
+      expect(status()).toBe('');
+      expect(date.value).toBe('30');
+      expect(category.value).toBe('Overview');
+    } finally {
+      vi.runOnlyPendingTimers();
+      vi.useRealTimers();
+      click.mockRestore();
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it.each([
+    ['success', 'success'],
+    ['failure', 'failure'],
+    ['failure', 'success'],
+    ['success', 'failure'],
+  ])('updates its live regions for %s followed by %s', async (first, second) => {
+    const { harness, page } = await openPage();
+    const status = page.querySelector('.summary-actions + [role="status"]')!;
+    const alert = page.querySelector('[role="alert"]')!;
+    const button = Array.from(page.querySelectorAll('button'))
+      .find(candidate => candidate.textContent?.includes('Export Demo CSV'))!;
+    const create = vi.fn(() => 'blob:sample');
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    vi.stubGlobal('URL', class extends URL {
+      static override createObjectURL = create;
+      static override revokeObjectURL = vi.fn();
+    });
+    vi.useFakeTimers();
+    try {
+      const announcements = [first, second].map((outcome, index) => {
+        if (outcome === 'failure') {
+          create.mockImplementationOnce(() => { throw new Error('Download setup failed'); });
+        }
+        button.click();
+        harness.detectChanges();
+        const region = outcome === 'success' ? status : alert;
+        const inactive = outcome === 'success' ? alert : status;
+        const message = outcome === 'success'
+          ? 'CSV download started.'
+          : 'CSV export could not be started. Please try again.';
+        const announcement = region.textContent?.trim();
+        expect(region.getAttribute('aria-atomic')).toBe('true');
+        expect(announcement).toContain(message);
+        expect(announcement).toContain('Attempt ' + (index + 1) + '.');
+        expect(inactive.textContent?.trim()).toBe('');
+        return announcement;
+      });
+      expect(announcements[1]).not.toBe(announcements[0]);
+    } finally {
+      vi.runOnlyPendingTimers();
       vi.useRealTimers();
       click.mockRestore();
       vi.unstubAllGlobals();
@@ -204,12 +313,37 @@ describe('ADM-15 Reports & Analytics', () => {
   it('distinguishes missing filtered records from zero and shows no export for empty reports', async () => {
     const sample = await fixture();
     const outsideWeek = { ...sample, days: sample.days.slice(0, -8) };
-    const { page, date, set } = await openPage(async () => outsideWeek);
+    const { harness, page, date, set, refresh } = await openPage(async () => outsideWeek);
+    const component: ReportsAnalyticsPage = harness.fixture.debugElement
+      .query(By.directive(ReportsAnalyticsPage)).componentInstance;
     set(date, '7');
     expect(page.textContent).toContain('No sample reports are available');
     expect(page.textContent).toContain('No sample chart data');
     expect(page.textContent).not.toContain('Export Demo CSV');
     expect(buildReport(outsideWeek, 7, 'Users').rows[0].current).toBe('Unavailable');
+
+    const create = vi.fn(() => { throw new Error('Download setup failed'); });
+    vi.stubGlobal('URL', class extends URL {
+      static override createObjectURL = create;
+    });
+    try {
+      component['exportCsv']();
+      harness.detectChanges();
+      expect(create).not.toHaveBeenCalled();
+      expect(page.textContent).not.toContain('Attempt ');
+
+      set(date, '30');
+      page.querySelector<HTMLButtonElement>('.summary-actions button')!.click();
+      harness.detectChanges();
+      expect(create).toHaveBeenCalledTimes(1);
+      expect(page.querySelector('[role="alert"]')?.textContent).toContain('Attempt 1.');
+
+      await component['load']();
+      await refresh();
+      expect(page.querySelector('[role="alert"]')?.textContent?.trim()).toBe('');
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it('shows an unavailable comparison when the preceding period has no fixture coverage', async () => {

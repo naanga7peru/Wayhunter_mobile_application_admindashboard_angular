@@ -33,8 +33,10 @@ const defaultRange: Range = 30;
 })
 export class ReportsAnalyticsPage implements OnInit {
   private readonly source = inject(ReportsAnalyticsDemoSource);
+  private exportAttempt = 0;
 
   protected readonly state = signal<State>({ kind: 'loading' });
+  protected readonly exportFeedback = signal<{ outcome: 'started' | 'failed'; attempt: number } | null>(null);
   protected readonly range = signal<Range>(defaultRange);
   protected readonly category = signal<Category>('Overview');
   protected readonly rangeOptions = ranges.map(days => ({ value: String(days), label: 'Last ' + days + ' sample days' }));
@@ -81,6 +83,7 @@ export class ReportsAnalyticsPage implements OnInit {
   }
 
   protected async load(): Promise<void> {
+    this.exportFeedback.set(null);
     this.state.set({ kind: 'loading' });
     try {
       this.state.set({ kind: 'ready', snapshot: await this.source.load() });
@@ -91,15 +94,22 @@ export class ReportsAnalyticsPage implements OnInit {
 
   protected selectRange(value: string): void {
     const range = ranges.find(days => String(days) === value);
-    if (range) this.range.set(range);
+    if (range && range !== this.range()) {
+      this.range.set(range);
+      this.exportFeedback.set(null);
+    }
   }
 
   protected selectCategory(value: string): void {
     const category = categories.find(option => option === value);
-    if (category) this.category.set(category);
+    if (category && category !== this.category()) {
+      this.category.set(category);
+      this.exportFeedback.set(null);
+    }
   }
 
   protected reset(): void {
+    this.exportFeedback.set(null);
     this.range.set(defaultRange);
     this.category.set('Overview');
   }
@@ -107,16 +117,32 @@ export class ReportsAnalyticsPage implements OnInit {
   protected exportCsv(): void {
     const report = this.view();
     if (!report?.hasData) return;
-    const url = URL.createObjectURL(new Blob([demoCsv(report.rows)], { type: 'text/csv;charset=utf-8' }));
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'wayhunter-fictional-demo-report-' + this.range() + 'd.csv';
-    document.body.append(link);
+    const attempt = ++this.exportAttempt;
+    let url: string | undefined;
+    let link: HTMLAnchorElement | undefined;
+    let started = false;
     try {
+      url = URL.createObjectURL(new Blob([demoCsv(report.rows)], { type: 'text/csv;charset=utf-8' }));
+      link = document.createElement('a');
+      link.href = url;
+      link.download = 'wayhunter-fictional-demo-report-' + this.range() + 'd.csv';
+      document.body.append(link);
       link.click();
+      started = true;
+    } catch {
+      this.exportFeedback.set({ outcome: 'failed', attempt });
     } finally {
-      link.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      link?.remove();
+      if (url !== undefined) {
+        const objectUrl = url;
+        if (started) {
+          // Keep the URL available for the browser to process the download request.
+          setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+        } else {
+          URL.revokeObjectURL(objectUrl);
+        }
+      }
     }
+    if (started) this.exportFeedback.set({ outcome: 'started', attempt });
   }
 }
