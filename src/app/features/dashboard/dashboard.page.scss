@@ -68,7 +68,8 @@ section > h2 {
 #district-activity-heading { margin: 0 0 .55rem; font-size: 1.2rem; }
 .district-note { color: var(--muted); margin: .55rem 0 .85rem; }
 .district-filter { width: min(100%, 16rem); }
-.district-table { width: 100%; border-collapse: collapse; margin-block-start: .85rem; }
+.district-table-scroll { contain: inline-size; overflow-x: auto; }
+.district-table { min-width: 16rem; width: 100%; border-collapse: collapse; margin-block-start: .85rem; }
 .district-table caption { text-align: start; color: var(--muted); }
 .district-table th, .district-table td {
   padding: .55rem .35rem;

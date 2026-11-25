@@ -10,6 +10,7 @@ export const DASHBOARD_DEMO_SOURCE = new InjectionToken<(range: DashboardRange) 
 const dayMs = 86_400_000;
 export const dashboardFixtureCoverage = Date.UTC(2026, 10, 22);
 const sampleEnd = dashboardFixtureCoverage;
+const sampleDistricts = ['Galle', 'Kandy', 'Matale'] as const;
 const shortDate = new Intl.DateTimeFormat('en-GB', { month: 'short', day: 'numeric', timeZone: 'UTC' });
 const dateTime = new Intl.DateTimeFormat('en-GB', {
   month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'UTC',

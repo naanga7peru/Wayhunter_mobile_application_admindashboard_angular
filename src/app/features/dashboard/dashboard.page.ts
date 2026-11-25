@@ -39,12 +39,25 @@ export class DashboardPage {
   protected readonly state = signal<DashboardState>({ kind: 'loading' });
   protected readonly snapshot = computed(() => {
     const state = this.state();
-    return state.kind === 'ready' || state.kind === 'error' ? state.snapshot : undefined;
+    return (state.kind === 'ready' || state.kind === 'error') && state.snapshot?.range === this.range()
+      ? state.snapshot : undefined;
   });
   protected readonly lastLoadedAt = computed(() => {
     const state = this.state();
     return state.kind === 'empty' ? state.loadedAt : this.snapshot()?.loadedAt;
   });
+  protected readonly district = signal('');
+  private readonly districtActivity = computed(() => this.snapshot()?.view.districtActivity ?? []);
+  protected readonly districts = computed<readonly FilterOption[]>(() => [
+    { value: '', label: 'All districts' },
+    ...this.districtActivity().map(({ district }) => ({ value: district, label: district })),
+  ]);
+  protected readonly visibleDistrictActivity = computed(() =>
+    this.districtActivity().filter(row => !this.district() || row.district === this.district()),
+  );
+  protected readonly districtScale = computed(() =>
+    Math.max(1, ...this.districtActivity().map(row => row.trips)),
+  );
   protected readonly checkingBackend = signal(false);
   protected readonly backendStatus = signal('Not checked');
 
@@ -87,7 +100,14 @@ export class DashboardPage {
         );
       }),
       takeUntilDestroyed(this.destroyRef),
-    ).subscribe(state => this.state.set(state));
+    ).subscribe(state => {
+      const selected = this.district();
+      if (state.kind === 'ready' && selected &&
+          !state.snapshot.view.districtActivity.some(row => row.district === selected)) {
+        this.district.set('');
+      }
+      this.state.set(state);
+    });
     this.loadSamples();
   }
 

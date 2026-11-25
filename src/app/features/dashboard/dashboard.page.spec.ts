@@ -27,7 +27,6 @@ describe('ADM-02 Dashboard', () => {
     return [sampleUsers, seed.trips, seed.reviews, seed.campaigns, seed.vouchers];
   }
 
-  async function openDashboard() {
   async function openDashboard(source?: (range: DashboardRange) => Subject<DashboardSourceResult>) {
     const checks: Subject<HealthResponse>[] = [];
     TestBed.configureTestingModule({
@@ -80,7 +79,7 @@ describe('ADM-02 Dashboard', () => {
   it('announces initial loading, then displays a successful snapshot and client load time', async () => {
     const { page, render, loadedAt } = await openControlledDashboard();
     expect(page.querySelector('wh-loading-state [role="status"]')?.textContent).toContain('Loading Dashboard sample data');
-    expect(page.querySelector('.metrics, .charts, .sample-loaded-at')).toBeNull();
+    expect(page.querySelector('.metrics, .charts, .district-table, .sample-loaded-at')).toBeNull();
     expect(page.querySelectorAll('.review-list a')).toHaveLength(3);
     expect(page.querySelector('.dashboard-source')?.textContent).toContain('Live Dashboard data unavailable');
     expect(page.querySelector('.dashboard-source time')?.getAttribute('datetime')).toBe('2026-11-22');
@@ -101,7 +100,7 @@ describe('ADM-02 Dashboard', () => {
     render({ kind });
     const message = kind === 'empty' ? 'No Dashboard sample data for this period.' : 'Dashboard sample data is unavailable.';
     expect(page.querySelector('.dashboard-source [role="status"]')?.textContent).toContain(message);
-    expect(page.querySelector('.metrics, .charts, wh-error-state')).toBeNull();
+    expect(page.querySelector('.metrics, .charts, .district-table, wh-error-state')).toBeNull();
     expect(Boolean(loadedAt())).toBe(kind === 'empty');
   });
 
@@ -112,9 +111,12 @@ describe('ADM-02 Dashboard', () => {
       ...view,
       metrics: view.metrics.map(metric => ({ ...metric, value: 0, change: 0 })),
       points: view.points.map(point => ({ ...point, trips: 0, newUsers: 0 })),
+      districtActivity: view.districtActivity.map(row => ({ ...row, trips: 0 })),
     } });
     expect(Array.from(page.querySelectorAll('.metric-value'), metric => metric.textContent?.trim()))
       .toEqual(['0', '0', '0', '0', '0']);
+    expect(Array.from(page.querySelectorAll('.district-table tbody td'), cell => cell.textContent?.trim()))
+      .toEqual(['0', '0', '0']);
     expect(page.querySelector('wh-error-state, wh-empty-state')).toBeNull();
   });
 
@@ -122,7 +124,7 @@ describe('ADM-02 Dashboard', () => {
     const { page, harness, loads, fail, render, loadedAt } = await openControlledDashboard();
     fail();
     expect(page.querySelector('wh-error-state [role="alert"]')?.textContent).toContain('could not be loaded');
-    expect(page.querySelector('.metrics, .charts, wh-empty-state')).toBeNull();
+    expect(page.querySelector('.metrics, .charts, .district-table, wh-empty-state')).toBeNull();
     expect(loadedAt()).toBeUndefined();
     page.querySelector<HTMLButtonElement>('wh-error-state button')!.click();
     harness.detectChanges();
@@ -138,6 +140,13 @@ describe('ADM-02 Dashboard', () => {
     const clock = vi.spyOn(Date, 'now').mockReturnValue(Date.UTC(2026, 10, 24, 15));
     try {
       render({ kind: 'ready', view: getDashboardDemo('7') });
+      const district = page.querySelector<HTMLSelectElement>('.district-filter select')!;
+      district.value = 'Kandy';
+      district.dispatchEvent(new Event('change'));
+      harness.detectChanges();
+      const districtRows = () => Array.from(page.querySelectorAll('.district-table tbody th'),
+        cell => cell.textContent?.trim());
+      expect(districtRows()).toEqual(['Kandy']);
       const metrics = page.querySelector('.metrics')?.textContent;
       const timestamp = loadedAt();
       clock.mockReturnValue(Date.UTC(2026, 10, 24, 16));
@@ -145,6 +154,7 @@ describe('ADM-02 Dashboard', () => {
       fail();
       expect(page.textContent).toContain('Showing previous sample data');
       expect(page.querySelector('.metrics')?.textContent).toBe(metrics);
+      expect(districtRows()).toEqual(['Kandy']);
       expect(loadedAt()).toBe(timestamp);
       page.querySelector<HTMLButtonElement>('wh-error-state button')!.click();
       harness.detectChanges();
@@ -152,8 +162,20 @@ describe('ADM-02 Dashboard', () => {
       expect(Date.parse(loadedAt()!)).toBe(Date.UTC(2026, 10, 24, 16));
       chooseRange('30');
       fail();
-      expect(page.querySelector('.metrics, .charts, .sample-loaded-at')).toBeNull();
+      expect(page.querySelector('.metrics, .charts, .district-table, .sample-loaded-at')).toBeNull();
       expect(page.textContent).not.toContain('Showing previous sample data');
+      expect(page.querySelectorAll('.review-list a')).toHaveLength(3);
+      expect(page.querySelector('.health-status')?.textContent).toBe('Not checked');
+      page.querySelector<HTMLButtonElement>('wh-error-state button')!.click();
+      render({ kind: 'ready', view: getDashboardDemo('30') });
+      expect(districtRows()).toEqual(['Kandy']);
+      chooseRange('90');
+      const view = getDashboardDemo('90');
+      render({ kind: 'ready', view: {
+        ...view, districtActivity: view.districtActivity.filter(row => row.district !== 'Kandy'),
+      } });
+      expect(page.querySelector<HTMLSelectElement>('.district-filter select')?.value).toBe('');
+      expect(districtRows()).toEqual(['Galle', 'Matale']);
     } finally {
       clock.mockRestore();
     }
@@ -232,7 +254,11 @@ describe('ADM-02 Dashboard', () => {
     expect(checks).toHaveLength(0);
   });
 
-  it.each(['7', '30', '90'] as const)('reconciles every district to the %s-day sample trip KPI', async range => {
+  it.each([
+    ['7', [128, 126, 126]],
+    ['30', [511, 510, 510]],
+    ['90', [1406, 1405, 1402]],
+  ] as const)('reconciles every district to the %s-day sample trip KPI', async (range, expectedCounts) => {
     const { harness, page } = await openDashboard();
     const time = page.querySelector<HTMLSelectElement>('.range-panel select')!;
     time.value = range;
@@ -252,6 +278,7 @@ describe('ADM-02 Dashboard', () => {
       return Number(row.cells[1].textContent?.replaceAll(',', '').trim());
     });
     expect(counts).toEqual(aggregates.map(row => row.trips));
+    expect(counts).toEqual(expectedCounts);
     expect(aggregates.map(Object.keys)).toEqual(rows.map(() => ['district', 'trips']));
     expect(counts.reduce((sum, count) => sum + count, 0))
       .toBe(Number(page.querySelectorAll('.metric-value')[1].textContent?.replaceAll(',', '').trim()));
@@ -275,7 +302,7 @@ describe('ADM-02 Dashboard', () => {
     expect(card.querySelector('tbody th')?.textContent?.trim()).toBe('Kandy');
     expect(card.textContent).toContain('subset of the all-district Sample trips total');
     select(time, '30');
-    expect(district.value).toBe('Kandy');
+    expect(card.querySelector('select')?.value).toBe('Kandy');
     const expected = getDashboardDemo('30').districtActivity.find(row => row.district === 'Kandy')!;
     expect(card.querySelector('tbody td')?.textContent?.trim()).toBe(expected.trips.toLocaleString('en-US'));
     const monthly = overall();
