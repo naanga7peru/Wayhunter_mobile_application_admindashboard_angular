@@ -113,8 +113,15 @@ describe('ADM-05 Advertisements Management', () => {
     expect(page.querySelectorAll('.queue li')).toHaveLength(2);
     expect(page.querySelector('.queue')?.textContent).toContain('Demo Forest Lab');
     expect(page.querySelector('.queue')?.textContent).toContain('Submitted');
-    expect(Array.from(page.querySelectorAll('.preview figcaption'), caption => caption.textContent)).toEqual([
-      'Banner', 'Square image', 'Promotional card',
+    expect(Array.from(page.querySelectorAll('figure.preview'), preview => ({
+      title: preview.querySelector('.creative-art strong')?.textContent,
+      sponsor: preview.querySelector('.phone-sponsor')?.textContent,
+      placement: preview.querySelector('.phone-header span')?.textContent,
+      creative: preview.querySelector('figcaption')?.textContent,
+    }))).toEqual([
+      { title: 'Ridge Weekend', sponsor: 'Demo Ridge Outfitters', placement: 'Home banner', creative: 'Banner' },
+      { title: 'Coastal Walks', sponsor: 'Demo Coast Collective', placement: 'Traveler', creative: 'Square image' },
+      { title: 'Forest Loop Challenge', sponsor: 'Demo Forest Lab', placement: 'Game', creative: 'Promotional card' },
     ]);
     expect(page.textContent).toContain('Demo Creative Preview — Not Published');
     expect(page.querySelector('.policy')?.textContent).toContain('DECISION_REQUIRED');
@@ -227,21 +234,49 @@ describe('ADM-05 Advertisements Management', () => {
     }
   });
 
-  it('announces loading and a retryable error deterministically', async () => {
+  it('shows a source error and restores inventory and metrics after Retry', async () => {
     const sample = await new AdvertisementsDemoSource().load();
-    let rejectLoad!: (reason: Error) => void;
-    const pending = new Promise<AdvertisementsSnapshot>((_, reject) => { rejectLoad = reject; });
-    let attempts = 0;
-    const { harness, page, ids } = await openPage({ load: () => ++attempts === 1 ? pending : Promise.resolve(sample) });
-    expect(page.querySelector('wh-loading-state [role="status"]')?.textContent).toContain('Loading');
-    rejectLoad(new Error('Sample unavailable'));
+    let rejectInitial!: (reason: Error) => void;
+    const initial = new Promise<AdvertisementsSnapshot>((_, reject) => { rejectInitial = reject; });
+    let resolveRetry!: (snapshot: AdvertisementsSnapshot) => void;
+    const recovery = new Promise<AdvertisementsSnapshot>(resolve => { resolveRetry = resolve; });
+    const load = vi.fn<AdvertisementsDemoSource['load']>()
+      .mockReturnValueOnce(initial)
+      .mockReturnValueOnce(recovery);
+    const { harness, page, ids, change } = await openPage({ load });
+    const loadingMessage = () => page.querySelector('wh-loading-state [role="status"]')?.textContent?.trim();
+    expect(load).toHaveBeenCalledTimes(1);
+    expect(loadingMessage()).toBe('Loading sample advertisements…');
+
+    rejectInitial(new Error('Sample unavailable'));
     await harness.fixture.whenStable();
     harness.detectChanges();
-    expect(page.querySelector('[role="alert"]')?.textContent).toContain('could not be loaded');
-    page.querySelector<HTMLButtonElement>('wh-error-state button')!.click();
+    expect(page.querySelector('wh-error-state [role="alert"]')?.textContent).toContain('Sample advertisements could not be loaded.');
+    expect(page.querySelector('wh-empty-state, .table-scroll, .performance, .metric-value')).toBeNull();
+    expect(page.textContent).not.toMatch(/No (?:sample )?advertisements/i);
+    const retry = page.querySelector<HTMLButtonElement>('wh-error-state button')!;
+    expect(retry.textContent?.trim()).toBe('Retry loading samples');
+    expect(retry.disabled).toBe(false);
+
+    retry.click();
+    harness.detectChanges();
+    expect(load).toHaveBeenCalledTimes(2);
+    expect(loadingMessage()).toBe('Loading sample advertisements…');
+
+    resolveRetry(sample);
     await harness.fixture.whenStable();
     harness.detectChanges();
-    expect(attempts).toBe(2);
-    expect(ids()).toHaveLength(10);
+    expect(page.querySelector('wh-error-state, wh-loading-state')).toBeNull();
+    expect(ids()).toEqual(sample.ads.map(ad => ad.id));
+    expect(Array.from(page.querySelectorAll('.metric-value'), metric => metric.textContent)).toEqual(['10', '2', '2', '1', '1']);
+    expect(Array.from(page.querySelectorAll('.performance dd'), metric => metric.textContent)).toEqual(['8,000', '320', '4.0%', '2']);
+
+    const search = page.querySelector<HTMLInputElement>('input[type="search"]')!;
+    change(search, 'coastal walks');
+    expect(ids()).toEqual(['AD-102']);
+    page.querySelector<HTMLButtonElement>('button[aria-label="View details for AD-102"]')!.click();
+    harness.detectChanges();
+    expect(page.querySelector('#details-title')?.textContent).toBe('Coastal Walks');
+    expect(page.querySelector('#advertisement-details')?.textContent).toContain('Demo Coast Collective');
   });
 });
