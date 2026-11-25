@@ -1,4 +1,6 @@
 ﻿import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { vi } from 'vitest';
@@ -9,7 +11,10 @@ import { AdvertisementsSnapshot, clickThroughRate } from './models/advertisement
 describe('ADM-05 Advertisements Management', () => {
   async function openPage(source?: Pick<AdvertisementsDemoSource, 'load'>) {
     TestBed.configureTestingModule({
-      providers: [provideRouter(routes), ...(source ? [{ provide: AdvertisementsDemoSource, useValue: source }] : [])],
+      providers: [
+        provideRouter(routes), provideHttpClient(), provideHttpClientTesting(),
+        ...(source ? [{ provide: AdvertisementsDemoSource, useValue: source }] : []),
+      ],
     });
     const harness = await RouterTestingHarness.create('/preview/advertisements');
     await harness.fixture.whenStable();
@@ -24,6 +29,66 @@ describe('ADM-05 Advertisements Management', () => {
     }
     return { harness, page, ids, search, change };
   }
+
+  it('links announced errors to labels and focuses the first invalid field', async () => {
+    const { harness, page } = await openPage();
+    const click = (label: string) => {
+      Array.from(page.querySelectorAll('button')).find(button => button.textContent?.trim() === label)!.click();
+      harness.detectChanges();
+    };
+    click('Create sample advertisement');
+    await harness.fixture.whenStable();
+    expect(document.activeElement?.textContent).toBe('Create sample advertisement');
+    click('Preview draft');
+    for (const key of ['title', 'imageUrl', 'startAtUtc', 'endAtUtc', 'placement']) {
+      const id = 'ad-editor-' + key;
+      const field = page.querySelector('#' + id);
+      expect(field?.getAttribute('aria-invalid')).toBe('true');
+      expect(field?.getAttribute('aria-describedby')?.split(' ')).toContain(id + '-error');
+      expect(page.querySelector('#' + id + '-error')?.getAttribute('role')).toBe('alert');
+      expect(page.querySelector('label[for="' + id + '"]')).not.toBeNull();
+    }
+    expect(document.activeElement?.id).toBe('ad-editor-title');
+    expect(page.querySelector('[aria-label="Local draft preview"]')).toBeNull();
+    TestBed.inject(HttpTestingController).verify();
+  });
+
+  it('previews create and edit without an HTTP request or an inventory change', async () => {
+    const { harness, page, change, ids } = await openPage();
+    const initialRows = ids();
+    const click = (label: string) => {
+      Array.from(page.querySelectorAll('button')).find(button => button.textContent?.trim() === label)!.click();
+      harness.detectChanges();
+    };
+    const field = (key: string) => page.querySelector<HTMLInputElement | HTMLSelectElement>('#ad-editor-' + key)!;
+    const preview = () => page.querySelector('[aria-label="Local draft preview"]');
+    click('Create sample advertisement');
+    change(field('title'), '  Local banner  ');
+    change(field('imageUrl'), 'https://example.com/banner.webp');
+    change(field('startAtUtc'), '2026-12-01T09:30:00Z');
+    change(field('endAtUtc'), '2026-12-02T09:30:00Z');
+    change(field('placement'), 'HomeBanner');
+    click('Preview draft');
+    expect(preview()?.querySelector('dd')?.textContent).toBe('Local banner');
+    expect(preview()?.querySelector('img, a')).toBeNull();
+
+    click('View details');
+    click('Edit sample advertisement');
+    expect(preview()).toBeNull();
+    expect(field('title').value).toBe(page.querySelector('#details-title')?.textContent);
+    expect(field('imageUrl').value).toBe('');
+    change(field('title'), 'Edited local title');
+    change(field('imageUrl'), 'https://example.com/updated.webp');
+    change(field('destinationUrl'), 'https://example.com/travel');
+    change(field('placement'), 'SponsoredPoi');
+    click('Preview draft');
+    expect(preview()?.textContent).toContain('Edited local title');
+    expect(preview()?.textContent).toContain('SponsoredPoi');
+    expect(ids()).toEqual(initialRows);
+    expect(page.querySelector('.table-scroll')?.textContent).not.toContain('Edited local title');
+    TestBed.inject(HttpTestingController).expectNone(() => true);
+    TestBed.inject(HttpTestingController).verify();
+  });
 
   function chooseFile(harness: RouterTestingHarness, picker: HTMLInputElement, file: File) {
     Object.defineProperty(picker, 'files', { configurable: true, value: [file] });

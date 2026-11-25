@@ -1,8 +1,9 @@
 ﻿import { DatePipe, DecimalPipe } from '@angular/common';
 import {
-  afterNextRender, ChangeDetectionStrategy, Component, computed, ElementRef, inject, Injector,
+  afterNextRender, ChangeDetectionStrategy, Component, computed, ElementRef, inject, Injector, isDevMode,
   OnDestroy, OnInit, signal, viewChild,
 } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { UiButton } from '../../shared/ui/button';
 import { UiCard } from '../../shared/ui/card';
 import { TableColumn, UiDataTable } from '../../shared/ui/data-table';
@@ -11,6 +12,8 @@ import { UiSearchInput } from '../../shared/ui/search-input';
 import { UiEmptyState, UiErrorState, UiLoadingState } from '../../shared/ui/states';
 import { StatusTone, UiStatusBadge } from '../../shared/ui/status-badge';
 import { AdvertisementsDemoSource } from './data-access/advertisements-demo';
+import { AdvertisementEditor } from './components/advertisement-editor';
+import { AdvertisementEditorFields } from './models/advertisement-editor';
 import {
   AdAuditEvent, Advertisement, AdvertisementsSnapshot, AdStatus, adStatuses, clickThroughRate, creativeTypes, placements,
 } from './models/advertisements-view';
@@ -39,7 +42,7 @@ function filterOptions(label: string, values: readonly string[]): readonly Filte
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [DatePipe, DecimalPipe, UiButton, UiCard, UiDataTable, UiEmptyState, UiErrorState, UiFilterSelect,
-    UiLoadingState, UiSearchInput, UiStatusBadge],
+    UiLoadingState, UiSearchInput, UiStatusBadge, AdvertisementEditor],
   templateUrl: './advertisements.page.html',
   styleUrl: './advertisements.page.scss',
 })
@@ -48,8 +51,11 @@ export class AdvertisementsPage implements OnInit, OnDestroy {
   private readonly injector = inject(Injector);
   private readonly detailsHeading = viewChild<ElementRef<HTMLElement>>('detailsHeading');
   private readonly results = viewChild<ElementRef<HTMLElement>>('results');
+  private readonly editorHeading = viewChild<ElementRef<HTMLElement>>('editorHeading');
   private detailsTrigger?: HTMLButtonElement;
 
+  protected readonly demoPreview = isDevMode() && inject(ActivatedRoute).parent?.routeConfig?.path === 'preview';
+  protected readonly draft = signal<{ title: string; fields: AdvertisementEditorFields } | null>(null);
   protected readonly state = signal<ViewState>({ kind: 'loading' });
   protected readonly search = signal('');
   protected readonly status = signal('');
@@ -159,6 +165,21 @@ export class AdvertisementsPage implements OnInit, OnDestroy {
     this.selected.set(null);
     (this.detailsTrigger?.isConnected ? this.detailsTrigger : this.results()?.nativeElement)?.focus();
     this.detailsTrigger = undefined;
+  }
+
+  protected openDraft(ad?: Advertisement): void {
+    this.draft.set({
+      title: ad ? 'Edit sample advertisement ' + ad.id : 'Create sample advertisement',
+      fields: {
+        title: ad?.title ?? '',
+        imageUrl: '',
+        destinationUrl: '',
+        startAtUtc: ad ? ad.start + 'T00:00:00Z' : '',
+        endAtUtc: ad ? ad.end + 'T00:00:00Z' : '',
+        placement: ad?.placement === 'Home banner' ? 'HomeBanner' : '',
+      },
+    });
+    afterNextRender({ write: () => this.editorHeading()?.nativeElement.focus() }, { injector: this.injector });
   }
 
   protected selectFile(input: HTMLInputElement): void {

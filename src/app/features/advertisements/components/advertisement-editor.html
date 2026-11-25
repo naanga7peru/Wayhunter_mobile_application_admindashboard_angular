@@ -1,0 +1,46 @@
+<p>Check a local draft. The preview displays URL text and leaves sample inventory intact.</p>
+<p id="ad-editor-date-help">Use an ISO UTC date and time, for example 2026-12-01T09:30:00Z.</p>
+<form novalidate (submit)="submit($event)">
+  @for (field of textFields; track field.key) {
+    @let fieldId = 'ad-editor-' + field.key;
+    @let dateHelp = field.key === 'startAtUtc' || field.key === 'endAtUtc' ? 'ad-editor-date-help' : '';
+    @let message = error(field.key);
+    <div class="field">
+      <label [for]="fieldId">{{ field.label }}</label>
+      <input #control [id]="fieldId" [value]="fields()[field.key]" (input)="update(field.key, control.value)"
+             [required]="field.key !== 'destinationUrl'"
+             [attr.aria-invalid]="message ? 'true' : null"
+             [attr.aria-describedby]="message ? (dateHelp + ' ' + fieldId + '-error').trim() : dateHelp || null" />
+      @if (message) {
+        <p [id]="fieldId + '-error'" role="alert">{{ message }}</p>
+      }
+    </div>
+  }
+  <div class="field">
+    <label for="ad-editor-placement">Placement</label>
+    <select #placement id="ad-editor-placement" required
+            (change)="update('placement', placement.value)"
+            [attr.aria-invalid]="error('placement') ? 'true' : null"
+            [attr.aria-describedby]="error('placement') ? 'ad-editor-placement-error' : null">
+      <option value="" [selected]="!fields().placement">Choose placement</option>
+      @for (option of placementOptions; track option) {
+        <option [value]="option" [selected]="fields().placement === option">{{ placements[option] }}</option>
+      }
+    </select>
+    @if (error('placement'); as message) {
+      <p id="ad-editor-placement-error" role="alert">{{ message }}</p>
+    }
+  </div>
+  <div><button whButton type="submit">Preview draft</button></div>
+</form>
+@if (preview(); as draft) {
+  <section aria-label="Local draft preview">
+    <h4 role="status">Local draft preview</h4>
+    <dl>
+      @for (field of textFields; track field.key) {
+        <dt>{{ field.label }}</dt><dd>{{ draft[field.key] || 'None' }}</dd>
+      }
+      <dt>Placement</dt><dd>{{ draft.placement }}</dd>
+    </dl>
+  </section>
+}
