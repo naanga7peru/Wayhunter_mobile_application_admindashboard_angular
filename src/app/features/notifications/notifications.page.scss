@@ -81,9 +81,8 @@ p { color: var(--muted); line-height: 1.55; }
 
 .overview-card {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: start;
-  gap: .55rem .75rem;
+  align-content: start;
+  gap: .55rem;
 }
 
 .overview-card h4 { margin: 0 0 .25rem; }
