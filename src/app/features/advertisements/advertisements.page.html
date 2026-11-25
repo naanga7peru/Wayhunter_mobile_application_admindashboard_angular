@@ -28,6 +28,9 @@
     </section>
 
     <wh-card heading="Advertisement inventory">
+      @if (demoPreview) {
+        <button whButton type="button" variant="outline" (click)="openDraft()">Create sample advertisement</button>
+      }
       <div class="filters" role="group" aria-label="Advertisement filters">
         <wh-search-input label="Search advertisements" placeholder="ID, title or advertiser" [(value)]="search" />
         <wh-filter-select label="Status" [options]="statusOptions" [(value)]="status" />
@@ -87,9 +90,19 @@
           </dl>
           <p><strong>Review notes</strong> · {{ ad.notes }}</p>
           <p class="muted">Sample performance · {{ ad.impressions | number }} impressions · {{ ad.clicks | number }} clicks · {{ ctr(ad.clicks, ad.impressions) | number:'1.1-2' }}% CTR</p>
+          @if (demoPreview) {
+            <button whButton type="button" variant="outline" (click)="openDraft(ad)">Edit sample advertisement</button>
+          }
         </section>
       }
     </wh-card>
+
+    @if (demoPreview && draft(); as editor) {
+      <wh-card>
+        <h3 #editorHeading tabindex="-1">{{ editor.title }}</h3>
+        <wayhunter-advertisement-editor [initial]="editor.fields" />
+      </wh-card>
+    }
 
     <wh-card heading="Demo Creative Preview — Not Published">
       <div class="preview-grid">
