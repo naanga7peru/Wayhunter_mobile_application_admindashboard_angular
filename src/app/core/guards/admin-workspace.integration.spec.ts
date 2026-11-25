@@ -24,6 +24,7 @@ const m7Modules = [
   { path: 'dashboard', label: 'Dashboard', heading: 'Welcome to WayHunter', content: 'Recent activities' },
   { path: 'advertisements', label: 'Advertisements', heading: 'Advertisements Management', content: 'Advertisement inventory' },
   { path: 'campaigns', label: 'Campaigns', heading: 'Campaigns Management', content: 'Campaign inventory' },
+  { path: 'games', label: 'Games', heading: 'Games & Anti-Cheat', content: 'Pending Game Creation Queue' },
   { path: 'reports-analytics', label: 'Reports & Analytics', heading: 'Reports & Analytics', content: 'Reporting overview' },
 ] as const;
 
@@ -91,6 +92,22 @@ describe('Admin workspace integration', () => {
       } finally {
         vi.unstubAllGlobals();
       }
+    });
+
+    it('keeps the Games demo search and details entirely local', async () => {
+      const harness = await RouterTestingHarness.create('/preview/games');
+      await harness.fixture.whenStable();
+      harness.detectChanges();
+      const page = harness.routeNativeElement!.querySelector('wayhunter-games-page')!;
+      const input = page.querySelector<HTMLInputElement>('input[type="search"]')!;
+      input.value = 'demo-creator-102';
+      input.dispatchEvent(new Event('input'));
+      harness.detectChanges();
+      page.querySelector<HTMLButtonElement>('tbody button')!.click();
+      harness.detectChanges();
+
+      expect(page.querySelector('#game-creation-details')?.textContent).toContain('Ravi Sample');
+      TestBed.inject(HttpTestingController).expectNone(() => true);
     });
   });
 
