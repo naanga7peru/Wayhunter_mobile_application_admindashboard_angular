@@ -1,0 +1,99 @@
+<header class="intro">
+  @if (demoPreview) {
+    <wh-status-badge label="Demo data" tone="warning" />
+  }
+  <h2>Games &amp; Anti-Cheat</h2>
+  @if (demoPreview) {
+    <p>All submissions and creator identities shown here are synthetic. This preview is read-only.</p>
+  }
+</header>
+
+<wh-card heading="Pending Game Creation Queue">
+  @if (!demoPreview) {
+    <wh-empty-state message="The live game creation queue is unavailable." />
+  } @else {
+    @let queue = state();
+    @switch (queue.kind) {
+      @case ('loading') {
+        <wh-loading-state message="Loading sample submissions…" />
+      }
+      @case ('error') {
+        <wh-error-state message="Sample submissions could not be loaded." retryLabel="Retry" (retry)="load()" />
+      }
+      @case ('ready') {
+        <div class="queue-toolbar">
+          <p class="pending-total"><strong>{{ queue.items.length }}</strong> Pending submissions</p>
+          <wh-search-input
+            label="Search submissions"
+            placeholder="Game title, creator name or ID"
+            [value]="search()"
+            (valueChange)="updateSearch($event)"
+          />
+        </div>
+        @if (filtered().length) {
+          <p class="results" role="status">{{ filtered().length }} of {{ queue.items.length }} sample submissions shown</p>
+          <p class="scroll-hint">Scroll the table to see all columns.</p>
+          <div class="table-scroll" role="region" aria-label="Pending game submissions" tabindex="0">
+            <table aria-label="Pending game creation queue">
+              <thead>
+                <tr>
+                  <th scope="col">Game title</th>
+                  <th scope="col">Creator name</th>
+                  <th scope="col">Creator user ID</th>
+                  <th scope="col">Submitted (UTC)</th>
+                  <th scope="col">Review status</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of filtered(); track item.gameId) {
+                  <tr [class.active]="selected()?.gameId === item.gameId">
+                    <th scope="row">
+                      <button
+                        #trigger
+                        type="button"
+                        class="title-button"
+                        [attr.aria-label]="'View details for ' + item.gameTitle"
+                        [attr.aria-expanded]="selected()?.gameId === item.gameId"
+                        aria-controls="game-creation-details"
+                        (click)="showDetails(item, trigger, detailsHeading)"
+                      >{{ item.gameTitle }}</button>
+                    </th>
+                    <td>{{ item.creatorNameSnapshot }}</td>
+                    <td class="creator-id">{{ item.creatorUserId }}</td>
+                    <td><time [attr.datetime]="item.submittedAtUtc">{{ item.submittedAtUtc | date:'dd MMM y, HH:mm:ss':'UTC' }} UTC</time></td>
+                    <td><wh-status-badge [label]="pendingStatus" tone="warning" /></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else if (queue.items.length) {
+          <wh-empty-state message="No sample submissions match your search." />
+        } @else {
+          <wh-empty-state message="There are no pending sample submissions." />
+        }
+
+        <section id="game-creation-details" class="details" aria-labelledby="game-creation-details-title" (keydown.escape)="closeDetails()">
+          <h3 #detailsHeading id="game-creation-details-title" tabindex="-1">Submission details</h3>
+          @if (selected(); as item) {
+            <div class="details-content">
+              <div class="details-title">
+                <p>{{ item.gameTitle }}</p>
+                <wh-status-badge [label]="pendingStatus" tone="warning" />
+              </div>
+              <dl>
+                <div><dt>Game ID</dt><dd>{{ item.gameId }}</dd></div>
+                <div><dt>Creator name</dt><dd>{{ item.creatorNameSnapshot }}</dd></div>
+                <div><dt>Creator user ID</dt><dd>{{ item.creatorUserId }}</dd></div>
+                <div><dt>Submitted (UTC)</dt><dd><time [attr.datetime]="item.submittedAtUtc">{{ item.submittedAtUtc | date:'dd MMM y, HH:mm:ss':'UTC' }} UTC</time></dd></div>
+              </dl>
+              <button whButton type="button" variant="outline" (click)="closeDetails()">Close details</button>
+            </div>
+          } @else {
+            <p>Select a game title to view the submission.</p>
+          }
+        </section>
+      }
+    }
+  }
+</wh-card>
