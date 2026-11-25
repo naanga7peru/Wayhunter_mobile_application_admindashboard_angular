@@ -1,0 +1,65 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.workspace {
+  display: grid;
+  gap: 1rem;
+}
+
+.workspace-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+}
+
+h2 {
+  margin: 0;
+  font-size: clamp(1.35rem, 3vw, 1.8rem);
+}
+
+nav ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+nav li {
+  min-width: 0;
+}
+
+nav a {
+  display: block;
+  padding: .65rem .85rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--glass);
+  color: var(--accent);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+  text-decoration: none;
+}
+
+nav a:hover,
+nav a:focus-visible {
+  background: var(--wash);
+  text-decoration: underline;
+}
+
+.review-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 23rem), 1fr));
+  align-items: stretch;
+  gap: 1rem;
+}
+
+.review-grid > section {
+  display: grid;
+  min-width: 0;
+}
