@@ -71,8 +71,8 @@ export class AdminShell {
 
   private pageTitle(): string {
     const child = this.route.snapshot.firstChild;
-    return child?.title
-      ?? this.groups.flatMap(group => group.links).find(link => link.path === child?.routeConfig?.path)?.label
+    return this.groups.flatMap(group => group.links).find(link => link.path === child?.routeConfig?.path)?.label
+      ?? child?.title
       ?? 'Dashboard';
   }
 }
