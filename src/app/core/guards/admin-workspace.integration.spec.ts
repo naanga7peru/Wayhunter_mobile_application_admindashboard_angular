@@ -63,7 +63,8 @@ describe('Admin workspace integration', () => {
       expect(harness.routeNativeElement?.querySelector('main h1')?.textContent).toBe(label);
       const page = harness.routeNativeElement?.querySelector(`main wayhunter-${path}-page`);
       expect(page?.querySelector('h2')?.textContent).toBe(heading);
-      expect(page?.querySelector(`wh-card[heading="${content}"]`)).toBeTruthy();
+      expect(Array.from(page?.querySelectorAll('wh-card h2') ?? [], title => title.textContent?.trim()))
+        .toContain(content);
       expect(page?.querySelector('wh-error-state')).toBeNull();
     });
 
@@ -94,7 +95,7 @@ describe('Admin workspace integration', () => {
       }
     });
 
-    it('keeps Games search, details and both decision previews entirely local', async () => {
+    it('keeps Games workspace navigation, search, details and both decision previews entirely local', async () => {
       const harness = await RouterTestingHarness.create('/preview/games');
       await harness.fixture.whenStable();
       harness.detectChanges();
@@ -123,6 +124,33 @@ describe('Admin workspace integration', () => {
       expect(page.querySelector('#creation-reason-feedback')?.textContent).toContain('Reason meets the preview requirements.');
       click('Reject creation');
       expect(page.querySelector('tbody tr wh-status-badge')?.textContent).toContain('Pending review');
+
+      const navigation = page.querySelector('nav[aria-label="Games workspace sections"]')!;
+      const links = Array.from(navigation.querySelectorAll<HTMLAnchorElement>('a'));
+      expect(links.map(link => link.textContent?.trim())).toEqual([
+        'Game Creation Review Queue',
+        'Game Inventory & Details',
+        'Stage Proof Review',
+        'Final Completion & Winner Review',
+        'Anti-Cheat Review',
+        'Leaderboards',
+      ]);
+      expect(getComputedStyle(navigation.querySelector('ul')!).flexWrap).toBe('wrap');
+      for (const link of [...links.slice(1), links[0]]) {
+        const heading = page.querySelector<HTMLElement>(link.hash)!;
+        expect(heading.closest('section')?.getAttribute('aria-labelledby')).toBe(heading.id);
+        expect(link.pathname).toBe(document.location.pathname);
+        expect(link.tabIndex).toBe(0);
+        heading.scrollIntoView = vi.fn();
+        link.click();
+        expect(document.activeElement).toBe(heading);
+        expect(heading.scrollIntoView).toHaveBeenCalledWith({ block: 'start' });
+      }
+      expect(page.querySelectorAll('.review-grid wh-empty-state')).toHaveLength(5);
+      expect(TestBed.inject(Router).url).toBe('/preview/games');
+      expect(input.value).toBe('demo-creator-102');
+      expect(page.querySelector('#game-creation-details')?.textContent).toContain('Ravi Sample');
+      expect(page.querySelector('textarea')?.value).toBe('Sample reason');
       TestBed.inject(HttpTestingController).expectNone(() => true);
     });
   });
