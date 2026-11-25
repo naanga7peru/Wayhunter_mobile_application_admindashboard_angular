@@ -67,6 +67,40 @@
     </section>
   }
 
+  <section aria-labelledby="district-activity-heading">
+    <wh-card>
+      <h2 id="district-activity-heading">Sample trip activity by district</h2>
+      <wh-status-badge tone="warning" label="Demo / Sample Data" />
+      <p class="district-note">District counts are synthetic. Selecting a district shows a subset of the all-district Sample trips total.</p>
+      <div class="district-filter">
+        <wh-filter-select label="Sample district" [options]="districts()" [(value)]="district" />
+      </div>
+      @if (visibleDistrictActivity().length) {
+        <table class="district-table">
+          <caption>Sample district trip counts · {{ view().period }}</caption>
+          <thead>
+            <tr><th scope="col">District</th><th scope="col">Sample trips</th></tr>
+          </thead>
+          <tbody>
+            @for (row of visibleDistrictActivity(); track row.district) {
+              <tr>
+                <th scope="row">{{ row.district }}</th>
+                <td>
+                  <span>{{ row.trips | number }}</span>
+                  <div class="district-track" aria-hidden="true">
+                    <span [style.width.%]="100 * row.trips / districtScale()"></span>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      } @else {
+        <p role="status">No sample district activity is available for this selection.</p>
+      }
+    </wh-card>
+  </section>
+
   <div class="operations">
     @if (snapshot(); as sample) {
       <wh-card heading="Recent activities">
