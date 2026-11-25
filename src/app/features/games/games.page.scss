@@ -160,6 +160,62 @@ dt {
 
 dd { margin: .2rem 0 0; }
 
+.decision-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+
+.decision-preview {
+  margin-block: 1rem;
+  padding: clamp(.75rem, 3vw, 1.25rem);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+}
+
+.decision-preview h4,
+.decision-preview h5 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.decision-preview h4,
+.decision-preview textarea {
+  scroll-margin-top: 6rem;
+}
+
+.decision-fields {
+  display: grid;
+  gap: .5rem;
+  margin-block-start: 1rem;
+}
+
+.decision-fields label {
+  font-weight: 650;
+}
+
+.decision-preview textarea {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 42rem;
+  padding: .65rem;
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  resize: vertical;
+}
+
+.decision-preview textarea[aria-invalid="true"] {
+  border-color: var(--danger-ink);
+}
+
+.decision-preview .reason-error {
+  color: var(--danger-ink);
+}
+
 @container (width < 45rem) {
   .scroll-hint { display: block; }
 }

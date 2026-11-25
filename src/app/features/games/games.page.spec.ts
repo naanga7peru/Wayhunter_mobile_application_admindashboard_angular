@@ -141,12 +141,99 @@ describe('Game creation queue', () => {
     expect(page.querySelector('[role="alert"]')).toBeNull();
   });
 
-  it('exposes only details controls when sample submissions are loaded', async () => {
-    await render();
-    page.querySelector<HTMLButtonElement>('tbody button')!.click();
+  function button(label: string): HTMLButtonElement {
+    return Array.from(page.querySelectorAll('button')).find(control => control.textContent?.trim() === label)!;
+  }
+
+  function click(control: HTMLButtonElement): void {
+    control.click();
     fixture.detectChanges();
-    expect(Array.from(page.querySelectorAll('button'), button => button.textContent?.trim()))
-      .toEqual(['Lantern Trail', 'Harbour Riddle', 'Canopy Quest', 'Close details']);
-    expect(page.querySelector('form')).toBeNull();
+  }
+
+  function enterReason(value: string): HTMLTextAreaElement {
+    const field = page.querySelector<HTMLTextAreaElement>('textarea')!;
+    field.value = value;
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+    fixture.detectChanges();
+    return field;
+  }
+
+  it('shows an approval confirmation for the selected game and disables submission', async () => {
+    await render();
+    click(button('Harbour Riddle'));
+    click(button('Preview approval'));
+    const preview = page.querySelector('#creation-decision-preview')!;
+    expect(preview.textContent).toContain('Approval confirmation');
+    expect(preview.textContent).toContain('Harbour Riddle by Ravi Sample');
+    expect(preview.textContent).toContain('Submission is unavailable');
+    expect(button('Approve creation').disabled).toBe(true);
+    click(button('Approve creation'));
+    expect(page.querySelectorAll('tbody tr')).toHaveLength(3);
+    expect(Array.from(page.querySelectorAll('tbody wh-status-badge'), badge => badge.textContent?.trim()))
+      .toEqual(Array(3).fill('Pending review'));
+  });
+
+  it.each([
+    ['empty', '', 'Enter a rejection reason.', true],
+    ['whitespace only', ' \t\n\u0085', 'Enter a rejection reason.', true],
+    ['one character after trimming', '  x  ', 'Reason meets the preview requirements.', false],
+    ['valid', '  Needs clearer clues.  ', 'Reason meets the preview requirements.', false],
+    ['1,000 characters after trimming', '  ' + 'a'.repeat(1000) + '  ', 'Reason meets the preview requirements.', false],
+    ['over 1,000 characters', 'a'.repeat(1001), 'Use 1,000 characters or fewer after trimming.', true],
+  ])('checks a rejection reason that is %s', async (_, value, message, invalid) => {
+    await render();
+    click(button('Lantern Trail'));
+    click(button('Preview rejection'));
+    expect(page.querySelector('form')?.textContent).toContain('Rejection reason preview');
+    const field = enterReason(value);
+    expect(field.required).toBe(true);
+    click(button('Check reason'));
+    expect(page.querySelector('#creation-reason-feedback')?.textContent).toContain(message);
+    expect(field.getAttribute('aria-invalid')).toBe(invalid ? 'true' : null);
+    if (invalid) expect(document.activeElement).toBe(field);
+    expect(button('Reject creation').disabled).toBe(true);
+    click(button('Reject creation'));
+    expect(page.querySelectorAll('tbody tr')).toHaveLength(3);
+    expect(page.querySelector('tbody tr.active wh-status-badge')?.textContent).toContain('Pending review');
+    expect(source).toHaveBeenCalledTimes(1);
+  });
+
+  it('restores focus on Cancel and Escape and clears the draft when details close', async () => {
+    await render();
+    const game = button('Lantern Trail');
+    click(game);
+    const reject = button('Preview rejection');
+    expect(reject.tabIndex).toBe(0);
+    click(reject);
+    expect(document.activeElement?.id).toBe('creation-decision-title');
+    expect(reject.getAttribute('aria-expanded')).toBe('true');
+    const field = enterReason('Discard this draft');
+    expect(field.tabIndex).toBe(0);
+    field.focus();
+    field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    fixture.detectChanges();
+    expect(document.activeElement).toBe(reject);
+    expect(reject.getAttribute('aria-expanded')).toBe('false');
+    expect(page.querySelector('textarea')).toBeNull();
+    click(reject);
+    expect(page.querySelector('textarea')?.value).toBe('');
+    click(button('Cancel preview'));
+    expect(document.activeElement).toBe(reject);
+    click(reject);
+    click(button('Close details'));
+    expect(document.activeElement).toBe(game);
+    expect(game.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('discards the decision draft when search hides the selected game', async () => {
+    await render();
+    click(button('Lantern Trail'));
+    click(button('Preview rejection'));
+    enterReason('Draft for Lantern Trail');
+    search('Canopy');
+    expect(page.querySelector('#creation-decision-preview')).toBeNull();
+    click(button('Canopy Quest'));
+    click(button('Preview rejection'));
+    expect(page.querySelector('textarea')?.value).toBe('');
   });
 });

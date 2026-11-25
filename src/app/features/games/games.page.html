@@ -4,7 +4,7 @@
   }
   <h2>Games &amp; Anti-Cheat</h2>
   @if (demoPreview) {
-    <p>All submissions and creator identities shown here are synthetic. This preview is read-only.</p>
+    <p>All submissions and creator identities shown here are synthetic. Creation decisions are preview-only.</p>
   }
 </header>
 
@@ -73,7 +73,7 @@
           <wh-empty-state message="There are no pending sample submissions." />
         }
 
-        <section id="game-creation-details" class="details" aria-labelledby="game-creation-details-title" (keydown.escape)="closeDetails()">
+        <section id="game-creation-details" class="details" aria-labelledby="game-creation-details-title" (keydown.escape)="handleEscape($event)">
           <h3 #detailsHeading id="game-creation-details-title" tabindex="-1">Submission details</h3>
           @if (selected(); as item) {
             <div class="details-content">
@@ -87,6 +87,54 @@
                 <div><dt>Creator user ID</dt><dd>{{ item.creatorUserId }}</dd></div>
                 <div><dt>Submitted (UTC)</dt><dd><time [attr.datetime]="item.submittedAtUtc">{{ item.submittedAtUtc | date:'dd MMM y, HH:mm:ss':'UTC' }} UTC</time></dd></div>
               </dl>
+              <div class="decision-actions">
+                <button whButton variant="outline" aria-controls="creation-decision-preview"
+                  [attr.aria-expanded]="decision() === 'approve'"
+                  (click)="openDecision('approve', $event, decisionHeading)">Preview approval</button>
+                <button whButton variant="outline" aria-controls="creation-decision-preview"
+                  [attr.aria-expanded]="decision() === 'reject'"
+                  (click)="openDecision('reject', $event, decisionHeading)">Preview rejection</button>
+              </div>
+              <section id="creation-decision-preview" class="decision-preview" aria-labelledby="creation-decision-title">
+                <h4 #decisionHeading id="creation-decision-title" tabindex="-1">Creation decision preview</h4>
+                <p>Submission is unavailable. Previewing a decision leaves the queue unchanged.</p>
+                @switch (decision()) {
+                  @case ('approve') {
+                    <div class="decision-fields">
+                      <h5>Approval confirmation</h5>
+                      <p>Confirm that {{ item.gameTitle }} by {{ item.creatorNameSnapshot }} is the creation submission you intend to approve.</p>
+                      <div class="decision-actions">
+                        <button whButton disabled>Approve creation</button>
+                        <button whButton variant="outline" (click)="cancelDecision()">Cancel preview</button>
+                      </div>
+                    </div>
+                  }
+                  @case ('reject') {
+                    <form class="decision-fields" novalidate (submit)="checkReason($event, rejectionReason)">
+                      <h5>Rejection reason preview</h5>
+                      <label for="creation-rejection-reason">Rejection reason (required)</label>
+                      <p id="creation-reason-help">Enter 1–1,000 characters. Leading and trailing whitespace is ignored.</p>
+                      <textarea #rejectionReason id="creation-rejection-reason" rows="4" required
+                        [value]="reason()"
+                        [attr.aria-invalid]="reasonChecked() && reasonError() ? 'true' : null"
+                        [attr.aria-describedby]="reasonChecked() && reasonError()
+                          ? 'creation-reason-help creation-reason-feedback' : 'creation-reason-help'"
+                        (input)="reason.set(rejectionReason.value); reasonChecked.set(false)"></textarea>
+                      <p>{{ reasonLength() }} / {{ reasonLimit }} characters after trimming</p>
+                      <p id="creation-reason-feedback" role="status" [class.reason-error]="reasonChecked() && reasonError()">
+                        @if (reasonChecked()) {
+                          {{ reasonError() || 'Reason meets the preview requirements.' }}
+                        }
+                      </p>
+                      <div class="decision-actions">
+                        <button whButton type="submit" variant="secondary">Check reason</button>
+                        <button whButton disabled>Reject creation</button>
+                        <button whButton variant="outline" (click)="cancelDecision()">Cancel preview</button>
+                      </div>
+                    </form>
+                  }
+                }
+              </section>
               <button whButton type="button" variant="outline" (click)="closeDetails()">Close details</button>
             </div>
           } @else {
