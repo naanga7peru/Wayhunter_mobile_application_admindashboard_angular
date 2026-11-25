@@ -2,6 +2,7 @@
 
 const dayMs = 86_400_000;
 const sampleEnd = Date.UTC(2026, 10, 22);
+const sampleDistricts = ['Galle', 'Kandy', 'Matale'] as const;
 const shortDate = new Intl.DateTimeFormat('en-GB', { month: 'short', day: 'numeric', timeZone: 'UTC' });
 const dateTime = new Intl.DateTimeFormat('en-GB', {
   month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'UTC',
@@ -50,6 +51,15 @@ export function getDashboardDemo(range: DashboardRange): DashboardView {
   const bucketSize = length / bucketCount;
 
   return {
+    districtActivity: sampleDistricts.map((district, index) => ({
+      district,
+      trips: selected.reduce((total, day) => {
+        // Rotate the remainder by sample date so overlapping ranges share the same daily counts.
+        const slot = (index + day.date / dayMs) % sampleDistricts.length;
+        return total + Math.floor(day.trips / sampleDistricts.length)
+          + Number(slot < day.trips % sampleDistricts.length);
+      }, 0),
+    })),
     period: shortDate.format(selected[0].date) + ' – ' + shortDate.format(sampleEnd) + ' 2026',
     metrics: [
       { label: 'Sample total users', value: totalUsers, detail: 'Accounts at period end', change: newUsers },
