@@ -11,6 +11,23 @@ describe('ADM-02 Dashboard', () => {
   const labels = ['Sample total users', 'Sample trips', 'Sample review requests opened',
     'Sample campaign starts', 'Sample vouchers issued'];
 
+  const sampleUsers = 12_846;
+  const format = new Intl.NumberFormat('en-US');
+  // Fixed expectations independently calculated from the UTC seed windows.
+  const seededRanges = [
+    { range: '7', period: '16 Nov – 22 Nov 2026', newAccounts: 232, trips: 380,
+      reviews: 4, reviewChange: 0, campaigns: 1, vouchers: 5, events: 4 },
+    { range: '30', period: '24 Oct – 22 Nov 2026', newAccounts: 927, trips: 1_531,
+      reviews: 18, reviewChange: 2, campaigns: 5, vouchers: 20, events: 6 },
+    { range: '90', period: '25 Aug – 22 Nov 2026', newAccounts: 2_478, trips: 4_213,
+      reviews: 51, reviewChange: 1, campaigns: 15, vouchers: 60, events: 8 },
+  ] as const;
+
+  function expectedKpis(seed: typeof seededRanges[number]) {
+    return [sampleUsers, seed.trips, seed.reviews, seed.campaigns, seed.vouchers];
+  }
+
+  async function openDashboard() {
   async function openDashboard(source?: (range: DashboardRange) => Subject<DashboardSourceResult>) {
     const checks: Subject<HealthResponse>[] = [];
     TestBed.configureTestingModule({
@@ -177,45 +194,41 @@ describe('ADM-02 Dashboard', () => {
     expect(checks).toHaveLength(0);
   });
 
-  it('updates sample metrics, chart values and activities while keeping module links stable', async () => {
+  it('updates the rendered KPIs, charts and separate event feed to the known totals as the range changes', async () => {
     const { harness, page, checks } = await openDashboard();
     const selector = page.querySelector('select')!;
-    const readView = () => ({
-      period: page.querySelector('.range-panel [role="status"]')?.textContent,
-      tripTotal: page.querySelectorAll('.metric-value')[1].textContent,
-      charts: Array.from(page.querySelectorAll('.charts caption'), caption => caption.textContent),
-      chartValues: Array.from(page.querySelectorAll('.charts tbody'), rows => rows.textContent),
-      eventCount: page.querySelectorAll('.operations tbody tr').length,
-      modules: page.querySelector('.review-list')?.textContent,
-      labels: Array.from(page.querySelectorAll('.metrics h3'), heading => heading.textContent?.trim()),
-      disclosure: page.querySelector('.intro wh-status-badge')?.textContent?.trim(),
-    });
-    const initial = readView();
+    const modules = page.querySelector('.review-list')?.textContent;
     expect(selector.value).toBe('7');
-    expect(initial.eventCount).toBe(4);
-    expect(initial.charts).toEqual(['Trips over time · sample data', 'User growth · sample data']);
 
-    selector.value = '30';
-    selector.dispatchEvent(new Event('change'));
-    harness.detectChanges();
-    const monthly = readView();
-    expect(monthly.eventCount).toBe(6);
-    expect(monthly.period).not.toBe(initial.period);
-    expect(monthly.tripTotal).not.toBe(initial.tripTotal);
-    expect(monthly.chartValues[0]).not.toBe(initial.chartValues[0]);
-    expect(monthly.chartValues[1]).not.toBe(initial.chartValues[1]);
-    expect(monthly.modules).toBe(initial.modules);
-    expect(monthly.labels).toEqual(labels);
-    expect(monthly.disclosure).toBe('Demo / Sample Data');
+    for (const seed of seededRanges) {
+      if (selector.value !== seed.range) {
+        selector.value = seed.range;
+        selector.dispatchEvent(new Event('change'));
+        harness.detectChanges();
+      }
 
-    selector.value = '90';
-    selector.dispatchEvent(new Event('change'));
-    harness.detectChanges();
-    const quarterly = readView();
-    expect(quarterly.eventCount).toBe(8);
-    expect(quarterly.modules).toBe(initial.modules);
-    expect(quarterly.labels).toEqual(labels);
-    expect(quarterly.disclosure).toBe('Demo / Sample Data');
+      expect(page.querySelector('.range-panel [role="status"]')?.textContent).toBe(seed.period);
+      expect(Array.from(page.querySelectorAll('.metrics h3'), heading => heading.textContent?.trim())).toEqual(labels);
+      expect(Array.from(page.querySelectorAll('.metric-value'), metric => metric.textContent?.trim()))
+        .toEqual(expectedKpis(seed).map(value => format.format(value)));
+      expect(Array.from(page.querySelectorAll('.charts caption'), caption => caption.textContent))
+        .toEqual(['Trips over time · sample data', 'User growth · sample data']);
+
+      const chartTotals = [seed.trips, seed.newAccounts];
+      const charts = Array.from(page.querySelectorAll('wayhunter-dashboard-chart'));
+      expect(charts).toHaveLength(chartTotals.length);
+      charts.forEach((chart, index) => {
+        expect(chart.querySelector('.total strong')?.textContent?.trim()).toBe(format.format(chartTotals[index]));
+        const counts = Array.from(chart.querySelectorAll('tbody tr td:last-child'),
+          cell => Number(cell.textContent?.replaceAll(',', '').trim()));
+        expect(counts.reduce((total, count) => total + count, 0)).toBe(chartTotals[index]);
+      });
+
+      // The activity feed is a separate fixture, even when its row count coincides with the review KPI.
+      expect(page.querySelectorAll('.operations tbody tr')).toHaveLength(seed.events);
+      expect(page.querySelector('.review-list')?.textContent).toBe(modules);
+      expect(page.querySelector('.intro wh-status-badge')?.textContent?.trim()).toBe('Demo / Sample Data');
+    }
     expect(checks).toHaveLength(0);
   });
 
@@ -279,8 +292,10 @@ describe('ADM-02 Dashboard', () => {
       detail: card.querySelector('.metric-detail')?.textContent?.trim(),
     }));
 
-    expect(metrics).toEqual(getDashboardDemo('7').metrics.map(({ value, detail }, index) => ({
-      label: labels[index], value: new Intl.NumberFormat('en-US').format(value), detail,
+    const details = ['Accounts at period end', 'Trips in this period', 'Requests opened in this period',
+      'Campaigns started in this period', 'Demo vouchers issued in this period'];
+    expect(metrics).toEqual(expectedKpis(seededRanges[0]).map((value, index) => ({
+      label: labels[index], value: format.format(value), detail: details[index],
     })));
   });
 
@@ -359,15 +374,15 @@ describe('ADM-02 Dashboard', () => {
     }
   });
 
-  it('keeps chart totals and preserves the sample review request calculations', () => {
-    for (const [range, value, change] of [['7', 4, 0], ['30', 18, 2], ['90', 51, 1]] as const) {
-      const view = getDashboardDemo(range);
-      expect(view.points.reduce((total, point) => total + point.trips, 0))
-        .toBe(view.metrics.find(metric => metric.label === 'Sample trips')?.value);
-      expect(view.points.reduce((total, point) => total + point.newUsers, 0))
-        .toBe(view.metrics.find(metric => metric.label === 'Sample total users')?.change);
-      expect(view.metrics.find(metric => metric.label === 'Sample review requests opened'))
-        .toMatchObject({ value, change });
-    }
+  it.each(seededRanges)('reconciles the fixed $range-day seed totals and chart buckets', seed => {
+    const view = getDashboardDemo(seed.range);
+    expect(view.period).toBe(seed.period);
+    expect(view.metrics.map(metric => metric.label)).toEqual(labels);
+    expect(view.metrics.map(metric => metric.value)).toEqual(expectedKpis(seed));
+    expect(view.metrics[0].change).toBe(seed.newAccounts);
+    expect(view.metrics[2].change).toBe(seed.reviewChange);
+    expect(view.points.reduce((total, point) => total + point.trips, 0)).toBe(seed.trips);
+    expect(view.points.reduce((total, point) => total + point.newUsers, 0)).toBe(seed.newAccounts);
+    expect(view.activities).toHaveLength(seed.events);
   });
 });
