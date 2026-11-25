@@ -94,7 +94,7 @@ describe('Admin workspace integration', () => {
       }
     });
 
-    it('keeps the Games demo search and details entirely local', async () => {
+    it('keeps Games search, details and both decision previews entirely local', async () => {
       const harness = await RouterTestingHarness.create('/preview/games');
       await harness.fixture.whenStable();
       harness.detectChanges();
@@ -107,6 +107,22 @@ describe('Admin workspace integration', () => {
       harness.detectChanges();
 
       expect(page.querySelector('#game-creation-details')?.textContent).toContain('Ravi Sample');
+      const click = (label: string) => {
+        Array.from(page.querySelectorAll('button')).find(button => button.textContent?.trim() === label)!.click();
+        harness.detectChanges();
+      };
+      click('Preview approval');
+      expect(page.querySelector('#creation-decision-preview')?.textContent).toContain('Approval confirmation');
+      click('Approve creation');
+      click('Preview rejection');
+      const reason = page.querySelector('textarea')!;
+      reason.value = 'Sample reason';
+      reason.dispatchEvent(new Event('input'));
+      harness.detectChanges();
+      click('Check reason');
+      expect(page.querySelector('#creation-reason-feedback')?.textContent).toContain('Reason meets the preview requirements.');
+      click('Reject creation');
+      expect(page.querySelector('tbody tr wh-status-badge')?.textContent).toContain('Pending review');
       TestBed.inject(HttpTestingController).expectNone(() => true);
     });
   });
