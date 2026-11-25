@@ -1,0 +1,30 @@
+<section class="workspace" aria-labelledby="adm10-management-heading">
+  <header class="workspace-header">
+    <h2 id="adm10-management-heading">Games Management</h2>
+    <wh-status-badge label="Backend integration pending" tone="warning" />
+  </header>
+
+  <nav aria-label="Games management sections">
+    <ul>
+      @for (section of sections; track section.id) {
+        <li>
+          <a [attr.href]="sectionLink(section.id)" (click)="jumpToSection($event, section.id)">
+            {{ section.heading }}
+          </a>
+        </li>
+      }
+    </ul>
+  </nav>
+
+  <div class="review-grid">
+    @for (section of sections; track section.id) {
+      <section [attr.aria-labelledby]="section.id">
+        <wh-games-contract-section
+          [headingId]="section.id"
+          [heading]="section.heading"
+          [message]="section.message"
+        />
+      </section>
+    }
+  </div>
+</section>
