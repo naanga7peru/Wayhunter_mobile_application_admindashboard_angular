@@ -1,4 +1,4 @@
-﻿:host { display: block; min-width: 0; }
+:host { display: block; min-width: 0; }
 
 .dashboard { display: grid; gap: clamp(1rem, 2vw, 1.65rem); container-type: inline-size; }
 
@@ -33,6 +33,9 @@
 }
 
 .range-panel p { margin-top: .45rem; font-size: .8125rem; }
+
+.dashboard-source { display: grid; justify-items: start; gap: .5rem; overflow-wrap: anywhere; }
+.dashboard-source p { margin: 0; color: var(--muted); }
 
 section > h2 {
   margin: 0 0 .75rem;

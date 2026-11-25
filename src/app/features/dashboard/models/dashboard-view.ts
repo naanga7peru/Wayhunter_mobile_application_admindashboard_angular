@@ -1,4 +1,20 @@
-﻿export type DashboardRange = '7' | '30' | '90';
+export type DashboardRange = '7' | '30' | '90';
+
+export type DashboardSourceResult =
+  | { readonly kind: 'ready'; readonly view: DashboardView }
+  | { readonly kind: 'empty' | 'unavailable' };
+
+export interface DashboardSnapshot {
+  readonly view: DashboardView;
+  readonly range: DashboardRange;
+  readonly loadedAt: number;
+}
+
+export type DashboardState =
+  | { readonly kind: 'ready'; readonly snapshot: DashboardSnapshot }
+  | { readonly kind: 'loading' | 'error'; readonly snapshot?: DashboardSnapshot }
+  | { readonly kind: 'empty'; readonly loadedAt: number }
+  | { readonly kind: 'unavailable' };
 
 export interface DashboardDistrictActivity {
   readonly district: string;
