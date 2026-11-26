@@ -21,11 +21,11 @@ const ownedModules = [
 ] as const;
 
 const m7Modules = [
-  { path: 'dashboard', label: 'Dashboard', heading: 'Welcome to WayHunter', content: 'Recent activities' },
-  { path: 'advertisements', label: 'Advertisements', heading: 'Advertisements Management', content: 'Advertisement inventory' },
-  { path: 'campaigns', label: 'Campaigns', heading: 'Campaigns Management', content: 'Campaign inventory' },
-  { path: 'games', label: 'Games', heading: 'Games & Anti-Cheat', content: 'Pending Game Creation Queue' },
-  { path: 'reports-analytics', label: 'Reports & Analytics', heading: 'Reports & Analytics', content: 'Reporting overview' },
+  { path: 'dashboard', group: 'Workspace', label: 'Dashboard', heading: 'Analytics', content: 'Recent activities' },
+  { path: 'advertisements', group: 'Growth & Outreach', label: 'Advertisements', heading: 'Advertisements Management', content: 'Advertisement inventory' },
+  { path: 'campaigns', group: 'Growth & Outreach', label: 'Campaigns', heading: 'Campaigns Management', content: 'Campaign inventory' },
+  { path: 'games', group: 'Community & Safety', label: 'Games', heading: 'Games & Anti-Cheat', content: 'Pending Game Creation Queue' },
+  { path: 'reports-analytics', group: 'Workspace', label: 'Reports & Analytics', heading: 'Reports & Analytics', content: 'Reporting overview' },
 ] as const;
 
 describe('Admin workspace integration', () => {
@@ -38,10 +38,13 @@ describe('Admin workspace integration', () => {
   afterEach(() => TestBed.inject(HttpTestingController).verify());
 
   describe('M7 module routes', () => {
-    it.each(m7Modules)('opens $label from the development preview sidebar', async ({ path, label, heading, content }) => {
+    it.each(m7Modules)('opens $label from the development preview sidebar', async ({ path, group, label, heading, content }) => {
       const harness = await RouterTestingHarness.create('/preview/authentication');
       const router = TestBed.inject(Router);
       const previewUrl = `/preview/${path}`;
+      const groupButtons = Array.from(harness.routeNativeElement!.querySelectorAll<HTMLButtonElement>('.group-button'));
+      groupButtons.find(button => button.getAttribute('aria-label') === group)!.click();
+      harness.detectChanges();
       const link = harness.routeNativeElement?.querySelector<HTMLAnchorElement>(
         `nav[aria-label="Admin modules"] a[href="${previewUrl}"]`,
       );
@@ -153,6 +156,64 @@ describe('Admin workspace integration', () => {
       expect(page.querySelector('textarea')?.value).toBe('Sample reason');
       TestBed.inject(HttpTestingController).expectNone(() => true);
     });
+  });
+
+  it('exposes all 17 module routes through mutually exclusive navigation groups', async () => {
+    const harness = await RouterTestingHarness.create('/preview/dashboard');
+    const router = TestBed.inject(Router);
+    const shell = harness.routeNativeElement!;
+    const groups = Array.from(shell.querySelectorAll<HTMLButtonElement>('.group-button'));
+    const panel = shell.querySelector('nav[aria-label="Admin modules"]')!;
+    const registeredPaths = router.config.find(route => route.path === 'admin')!.children!
+      .filter(route => route.path)
+      .map(route => '/preview/' + route.path);
+    const visited: string[] = [];
+
+    expect(groups).toHaveLength(5);
+    expect(panel.hasAttribute('inert')).toBe(true);
+    expect(groups[0].classList.contains('current')).toBe(true);
+
+    for (const group of groups) {
+      group.click();
+      harness.detectChanges();
+      expect(groups.filter(button => button.getAttribute('aria-expanded') === 'true')).toEqual([group]);
+      expect(panel.querySelector('h2')?.textContent?.trim()).toBe(group.getAttribute('aria-label'));
+      const urls = Array.from(panel.querySelectorAll<HTMLAnchorElement>('a'), link => link.pathname);
+      expect(urls.length).toBeGreaterThan(0);
+
+      for (const url of urls) {
+        const link = panel.querySelector<HTMLAnchorElement>(`a[href="${url}"]`)!;
+        const done = router.url === url ? harness.fixture.whenStable() : firstValueFrom(
+          router.events.pipe(filter(event => event instanceof NavigationEnd)),
+        );
+        link.click();
+        await done;
+        await harness.fixture.whenStable();
+        harness.detectChanges();
+        expect(router.url).toBe(url);
+        expect(link.getAttribute('aria-current')).toBe('page');
+        expect(group.classList.contains('current')).toBe(true);
+        visited.push(url);
+      }
+    }
+    expect(visited).toHaveLength(17);
+    expect(visited.sort()).toEqual(registeredPaths.sort());
+  });
+
+  it('dismisses the expanded group on Escape and restores focus to its trigger', async () => {
+    const harness = await RouterTestingHarness.create('/preview/dashboard');
+    const shell = harness.routeNativeElement!;
+    const trigger = shell.querySelector<HTMLButtonElement>('.desktop-toggle')!;
+    trigger.click();
+    harness.detectChanges();
+    const link = shell.querySelector<HTMLAnchorElement>('.nav-link')!;
+    expect(trigger.getAttribute('aria-expanded')).toBe('true');
+    link.focus();
+    link.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    harness.detectChanges();
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+    expect(shell.querySelector('.nav-link')).toBeNull();
+    expect(document.activeElement).toBe(trigger);
   });
 
   it.each(ownedModules)('loads %s in development preview and denies its Admin route', async (path, heading) => {

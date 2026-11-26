@@ -1,4 +1,4 @@
-﻿import { booleanAttribute, ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { booleanAttribute, ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { UiEmptyState, UiLoadingState } from './states';
 
 export interface TableColumn<Row> {
@@ -44,11 +44,13 @@ export interface TableColumn<Row> {
   styles: `
     :host { display: block; min-width: 0; }
     .scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius-control); }
-    table { width: 100%; border-collapse: collapse; text-align: start; font-size: .875rem; }
-    caption, th, td { padding: .75rem 1rem; overflow-wrap: anywhere; }
+    table { width: 100%; min-width: var(--table-min-width, 0); border-collapse: collapse; text-align: start; font-size: var(--table-font-size, .875rem); }
+    caption, th, td { padding: .75rem var(--table-cell-inline, 1rem); overflow-wrap: var(--table-wrap, anywhere); }
     caption { text-align: start; font-weight: 700; }
     th, td { border-block-start: 1px solid var(--line); text-align: start; }
-    th { background: var(--neutral-bg); color: var(--ink); }
+    th { background: var(--table-header, var(--neutral-bg)); color: var(--ink); }
+    tbody tr:nth-child(odd) { background: var(--table-row, transparent); }
+    th:last-child, td:last-child { text-align: var(--table-last-align, start); }
   `,
 })
 export class UiDataTable<Row> {

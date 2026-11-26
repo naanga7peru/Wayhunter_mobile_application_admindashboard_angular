@@ -136,7 +136,8 @@ describe('shared UI', () => {
     TestBed.configureTestingModule({ providers: [provideRouter(routes)] });
     const harness = await RouterTestingHarness.create('/preview/shared-ui');
     expect(harness.routeNativeElement?.querySelector('h1')?.textContent).toBe('Shared UI');
-    expect(harness.routeNativeElement?.querySelectorAll('nav a').length).toBe(17);
+    expect(harness.routeNativeElement?.querySelectorAll('nav[aria-label="Admin navigation groups"] button').length).toBe(5);
+    expect(harness.routeNativeElement?.querySelector('nav[aria-label="Admin modules"]')?.hasAttribute('inert')).toBe(true);
     expect(harness.routeNativeElement?.querySelector('wh-data-table tbody tr')).toBeTruthy();
 
     await harness.navigateByUrl('/admin/shared-ui');

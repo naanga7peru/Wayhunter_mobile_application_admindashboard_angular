@@ -1,0 +1,21 @@
+﻿@mixin tokens {
+  --navy: #101321;
+  --ink: #111321;
+  --muted: #64646d;
+  --accent: #354b80;
+  --accent-hover: #26365e;
+  --blue: #4a78f5;
+  --coral: #f57561;
+  --pink: #ed52a1;
+  --soft-coral: #f8cbc6;
+  --chart-ink: var(--navy);
+  --chart-fill: #fce2e2;
+  --workspace-bg: #efedeb;
+  --wash: #e6e1de;
+  --glass: #faf9f7;
+  --line: #e7e1dd;
+  --control-border: #918a88;
+  --radius-control: .85rem;
+  --radius-panel: clamp(1.25rem, 2.5vw, 2rem);
+  --panel-shadow: 0 4px 18px rgb(17 19 33 / 4%);
+}
