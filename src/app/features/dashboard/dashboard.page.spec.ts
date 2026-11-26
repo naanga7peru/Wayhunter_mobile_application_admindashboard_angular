@@ -150,7 +150,7 @@ describe('ADM-02 Dashboard', () => {
       const metrics = page.querySelector('.metrics')?.textContent;
       const timestamp = loadedAt();
       clock.mockReturnValue(Date.UTC(2026, 10, 24, 16));
-      page.querySelector<HTMLButtonElement>('.dashboard-source button')!.click();
+      page.querySelector<HTMLButtonElement>('.reload-sample')!.click();
       fail();
       expect(page.textContent).toContain('Showing previous sample data');
       expect(page.querySelector('.metrics')?.textContent).toBe(metrics);

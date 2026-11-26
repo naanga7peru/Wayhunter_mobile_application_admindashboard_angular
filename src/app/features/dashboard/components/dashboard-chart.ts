@@ -1,4 +1,4 @@
-﻿import { DecimalPipe } from '@angular/common';
+import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { UiCard } from '../../../shared/ui/card';
 import { UiDataTable, TableColumn } from '../../../shared/ui/data-table';
@@ -20,7 +20,7 @@ interface ChartRow { label: string; value: number; }
           @if (kind() === 'bars') {
             <div class="bars">
               @for (row of rows(); track row.label) {
-                <span [style.height.%]="100 * row.value / ceiling()"></span>
+                <span [class.peak]="row.value === ceiling()" [style.height.%]="100 * row.value / ceiling()"></span>
               }
             </div>
           } @else {
@@ -47,19 +47,25 @@ interface ChartRow { label: string; value: number; }
     .total { margin: 0; color: var(--muted); font-size: .875rem; }
     strong { font-size: 1.65rem; color: var(--ink); margin-inline-end: .25rem; }
     figure { margin: 1rem 0; }
-    .plot { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .65rem; height: 8.25rem; }
+    .plot { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .65rem; height: clamp(8rem, 12vw, 11rem); }
     .scale, figcaption { display: flex; justify-content: space-between; color: var(--muted); font-size: .75rem; }
     .scale { flex-direction: column; text-align: end; }
     figcaption { gap: 1rem; margin-block-start: .4rem; }
     .bars, svg {
       width: 100%; height: 100%; min-height: 0; border-block-end: 1px solid var(--control-border);
-      background: repeating-linear-gradient(to top, transparent 0 calc(25% - 1px), var(--line) calc(25% - 1px) 25%);
+      background: repeating-linear-gradient(to top, transparent 0 calc(25% - 1px), var(--line) calc(25% - 1px) 25%), var(--workspace-bg);
+      border-radius: .6rem .6rem 0 0;
     }
     .bars { display: flex; align-items: end; justify-content: space-around; gap: 3%; padding-inline: 3%; }
-    .bars span { width: 100%; max-width: 2.65rem; border-radius: .45rem .45rem 0 0; background: linear-gradient(#6889e6, var(--accent)); }
+    .bars span { width: 100%; max-width: 1.2rem; border-radius: 99px; background: #b8b5ae; }
+    .bars span.peak { background: linear-gradient(var(--coral), var(--pink)); }
     svg { display: block; }
-    polygon { fill: var(--success-bg); opacity: .8; }
-    polyline { fill: none; stroke: var(--success-ink); stroke-width: 2.5px; stroke-linejoin: round; }
+    @media (prefers-reduced-motion: no-preference) {
+      .plot { animation: chart-in 300ms ease-out; }
+      @keyframes chart-in { from { opacity: .35; transform: translateY(4px); } }
+    }
+    polygon { fill: var(--chart-fill); opacity: .8; }
+    polyline { fill: none; stroke: var(--chart-ink); stroke-width: 2.5px; stroke-linejoin: round; }
     summary { width: fit-content; padding-block: .35rem; cursor: pointer; color: var(--accent); font-size: .875rem; font-weight: 650; }
     details[open] wh-data-table { margin-block-start: .65rem; }
   `,

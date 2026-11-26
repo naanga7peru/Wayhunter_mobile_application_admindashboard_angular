@@ -2,18 +2,20 @@
   <header class="intro">
     <div>
       <wh-status-badge tone="warning" label="Demo / Sample Data" />
-      <h2>Welcome to WayHunter</h2>
-      <p>Explore sample travel activity, campaign starts, and administrative events.</p>
+      <h2 class="intro-title">Analytics</h2>
     </div>
-    <div class="range-panel">
+    <div class="range-panel filter-width">
       <wh-filter-select label="Sample time range" [options]="ranges" [value]="range()"
                         (valueChange)="selectRange($event)" />
-      <p role="status">{{ snapshot()?.view?.period }}</p>
+      <p class="range-period muted" role="status">{{ snapshot()?.view?.period }}</p>
     </div>
+    @if (state().kind === 'ready') {
+      <button class="reload-sample" whButton (click)="loadSamples()">Reload sample data</button>
+    }
   </header>
 
   <section class="dashboard-source" aria-label="Dashboard data source">
-    <p>Live Dashboard data unavailable</p>
+    <p class="source-label">Live Dashboard data unavailable</p>
     <p>Sample fixture coverage through <time [attr.datetime]="fixtureCoverage | date:'yyyy-MM-dd':'UTC'">{{ fixtureCoverage | date:'mediumDate':'UTC' }}</time> (UTC)</p>
     @if (lastLoadedAt() !== undefined) {
       <p>Sample loaded at (local time)
@@ -32,21 +34,44 @@
       @if (snapshot()) {
         <p role="status">Showing previous sample data</p>
       }
-    } @else {
-      <button whButton variant="outline" (click)="loadSamples()">Reload sample data</button>
     }
   </section>
 
   @if (snapshot(); as sample) {
-    <section aria-labelledby="overview-heading">
-      <h2 id="overview-heading">KPI overview</h2>
+    <section class="overview" aria-labelledby="overview-heading">
+      <h2 class="section-title" id="overview-heading">KPI overview</h2>
       <div class="metrics">
-        @for (metric of sample.view.metrics; track metric.label; let first = $first) {
-          <wh-card>
-            <h3>{{ metric.label }}</h3>
+        @for (metric of sample.view.metrics; track metric.label; let first = $first; let index = $index) {
+          <wh-card class="metric-card" [class.metric-trips]="index === 1">
+            <svg class="metric-icon" width="1.65rem" height="1.65rem" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              @switch (index) {
+                @case (0) { <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2m20 0v-2a4 4 0 0 0-3-4m-3-12a4 4 0 0 1 0 8"/><circle cx="9" cy="7" r="4"/> }
+                @case (1) { <path d="m6 18 12-12"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="5" r="3"/> }
+                @case (2) { <path d="M8 4H5v17h14V4h-3M8 3h8v4H8zm1 9h6m-6 4h6"/> }
+                @case (3) { <path d="m3 10 13-5v14L3 15zm4 7 1 4m11-12 2-2m-2 6h3m-3 4 2 2"/> }
+                @case (4) { <path d="M3 6h18v4a2 2 0 0 0 0 4v4H3v-4a2 2 0 0 0 0-4zm9 3v1m0 4v1"/> }
+              }
+            </svg>
+            <h3 class="metric-label">{{ metric.label }}</h3>
             <p class="metric-value">{{ metric.value | number }}</p>
+            @if (first && metric.value > 0) {
+              <div class="account-ring" aria-hidden="true"
+                   [style.--new-share]="(100 * metric.change / metric.value) + '%'">
+                <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor"
+                     stroke-width="1.6" stroke-linecap="round" aria-hidden="true">
+                  <circle cx="9" cy="8" r="3"/><path d="M3 20v-2a5 5 0 0 1 5-5h2a5 5 0 0 1 5 5v2m2-12h5m-2.5-2.5v5"/>
+                </svg>
+              </div>
+            }
+            @if (index === 1) {
+              <svg class="metric-accent" viewBox="0 0 300 56" preserveAspectRatio="none" aria-hidden="true">
+                <path d="M0 32C31 32 55 55 87 46S130 16 162 24 208 53 241 36 276 18 300 20"/>
+                <path d="M0 43C38 37 64 14 95 19S143 48 172 43 216 13 246 17 280 27 300 36"/>
+              </svg>
+            }
             <p class="metric-detail">{{ metric.detail }}</p>
-            <p class="trend">
+            <p class="trend" [class.decline]="metric.change < 0">
               <strong>
                 @if (metric.change > 0) { + }
                 {{ metric.change | number }}
@@ -58,37 +83,37 @@
       </div>
     </section>
 
-    <section aria-labelledby="analytics-heading">
-      <h2 id="analytics-heading">Analytics overview</h2>
+    <section class="analytics" aria-labelledby="analytics-heading">
+      <h2 class="section-title" id="analytics-heading">Analytics overview</h2>
       <div class="charts">
         <wayhunter-dashboard-chart heading="Trips over time" unit="trips" kind="bars" [points]="sample.view.points" />
         <wayhunter-dashboard-chart heading="User growth" unit="new accounts" kind="line" [points]="sample.view.points" />
       </div>
     </section>
 
-    <section aria-labelledby="district-activity-heading">
+    <section class="district" aria-labelledby="district-activity-heading">
       <wh-card>
-        <h2 id="district-activity-heading">Sample trip activity by district</h2>
+        <h2 id="district-activity-heading" class="district-title">Sample trip activity by district</h2>
         <wh-status-badge tone="warning" label="Demo / Sample Data" />
         <p class="district-note">District counts are synthetic. Selecting a district shows a subset of the all-district Sample trips total.</p>
-        <div class="district-filter">
+        <div class="district-filter filter-width">
           <wh-filter-select label="Sample district" [options]="districts()" [(value)]="district" />
         </div>
         @if (visibleDistrictActivity().length) {
           <div class="district-table-scroll" tabindex="0" role="region" aria-labelledby="district-activity-heading">
             <table class="district-table">
-              <caption>Sample district trip counts · {{ sample.view.period }}</caption>
+              <caption class="district-caption">Sample district trip counts · {{ sample.view.period }}</caption>
               <thead>
-                <tr><th scope="col">District</th><th scope="col">Sample trips</th></tr>
+                <tr><th class="district-cell" scope="col">District</th><th class="district-cell" scope="col">Sample trips</th></tr>
               </thead>
               <tbody>
                 @for (row of visibleDistrictActivity(); track row.district) {
                   <tr>
-                    <th scope="row">{{ row.district }}</th>
-                    <td>
+                    <th class="district-cell" scope="row">{{ row.district }}</th>
+                    <td class="district-cell trip-count">
                       <span>{{ row.trips | number }}</span>
                       <div class="district-track" aria-hidden="true">
-                        <span [style.width.%]="100 * row.trips / districtScale()"></span>
+                        <span class="district-fill" [style.width.%]="100 * row.trips / districtScale()"></span>
                       </div>
                     </td>
                   </tr>
@@ -103,40 +128,47 @@
     </section>
   }
 
-  <div class="operations">
-    @if (snapshot(); as sample) {
-      <wh-card heading="Recent activities">
-        <ul class="activity-summary" aria-label="Activity status counts">
-          @for (badge of activitySummary(); track badge.status) {
-            <li><wh-status-badge [tone]="badge.tone" [label]="badge.label" /></li>
-          }
-        </ul>
-        <wh-data-table caption="Sample administrative events" [rows]="sample.view.activities"
-                       [columns]="activityColumns" [rowKey]="activityKey" />
-      </wh-card>
-    }
-    <wh-card heading="Review modules">
-      <ul class="review-list">
-        <li>
-          <a routerLink="../hunter-verification">
-            <span>Hunter verification</span>
-          </a>
-        </li>
-        <li>
-          <a routerLink="../hazards">
-            <span>Reported hazards</span>
-          </a>
-        </li>
-        <li>
-          <a routerLink="../redemptions-settlements">
-            <span>Voucher redemptions</span>
-          </a>
-        </li>
+  @if (snapshot(); as sample) {
+    <wh-card class="activity operations" heading="Recent activities">
+      <ul class="activity-summary" aria-label="Activity status counts">
+        @for (badge of activitySummary(); track badge.status) {
+          <li><wh-status-badge [tone]="badge.tone" [label]="badge.label" /></li>
+        }
       </ul>
+      <wh-data-table caption="Sample administrative events" class="activity-table" [rows]="sample.view.activities"
+                     [columns]="activityColumns" [rowKey]="activityKey" />
     </wh-card>
-  </div>
+  }
+  <wh-card class="reviews" heading="Review modules">
+    <ul class="review-list">
+      <li>
+        <a class="review-link" routerLink="../hunter-verification">
+          <span>Hunter verification</span>
+          <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+            <path d="M2 7h9m-3-3 3 3-3 3" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </a>
+      </li>
+      <li>
+        <a class="review-link" routerLink="../hazards">
+          <span>Reported hazards</span>
+          <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+            <path d="M2 7h9m-3-3 3 3-3 3" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </a>
+      </li>
+      <li>
+        <a class="review-link" routerLink="../redemptions-settlements">
+          <span>Voucher redemptions</span>
+          <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+            <path d="M2 7h9m-3-3 3 3-3 3" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </a>
+      </li>
+    </ul>
+  </wh-card>
 
-  <wh-card heading="Platform health">
+  <wh-card class="platform" heading="Platform health">
     <div class="diagnostics">
       <div>
         <p class="muted">Development diagnostics for the backend availability endpoint.</p>

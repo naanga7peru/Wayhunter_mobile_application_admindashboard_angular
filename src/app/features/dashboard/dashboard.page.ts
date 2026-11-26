@@ -27,7 +27,7 @@ const activityTones: Record<ActivityStatus, StatusTone> = {
     UiFilterSelect, UiLoadingState, UiStatusBadge, DashboardChart],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './dashboard.page.html',
-  styleUrl: './dashboard.page.scss',
+  styleUrls: ['./dashboard-metrics.scss', './dashboard.page.scss'],
 })
 export class DashboardPage {
   private readonly api = inject(ApiClientService);

@@ -1,0 +1,63 @@
+.metric-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-content: start;
+  align-items: center;
+  gap: .35rem .75rem;
+  padding: clamp(1rem, 2.25vw, 1.9rem);
+  border: 0;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+.metric-icon {
+  box-sizing: content-box;
+  grid-row: span 2;
+  padding: .55rem;
+  border-radius: .9rem;
+  background: var(--soft-coral);
+  color: var(--navy);
+}
+.metric-label { margin: 0; font-size: .9rem; font-weight: 650; }
+.metric-value { margin: 0; font-size: clamp(1.65rem, 3vw, 2.45rem); font-weight: 750; letter-spacing: -.035em; }
+.metric-detail, .trend, .metric-accent { grid-column: 1 / -1; }
+.metric-detail, .trend { font-size: .8rem; color: var(--muted); margin: .25rem 0 0; }
+.trend strong { color: var(--ink); font-variant-numeric: tabular-nums; }
+.metric-trips {
+  order: -1;
+  background: linear-gradient(112deg, var(--coral), var(--pink));
+  color: #fff;
+}
+.metric-trips .metric-value {
+  font-size: clamp(2.6rem, 4vw, 3.85rem);
+  line-height: 1;
+  text-shadow: 0 1px 2px #52203e80;
+}
+.metric-trips .metric-label { text-shadow: 0 1px 2px #52203e; }
+.metric-trips .metric-detail, .metric-trips .trend { color: var(--navy); }
+.metric-accent { display: block; width: 100%; height: 3.5rem; margin-block: .4rem; }
+.metric-accent path { fill: none; stroke: #fff; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.metric-accent path + path { stroke: #342759; opacity: .7; }
+.account-ring {
+  position: absolute;
+  inset: auto 1.25rem 1.25rem auto;
+  display: grid;
+  place-items: center;
+  width: 6.5rem;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: conic-gradient(var(--pink) var(--new-share, 0%), var(--navy) 0);
+}
+.account-ring svg {
+  box-sizing: content-box;
+  padding: 1.85rem;
+  border-radius: 50%;
+  background: var(--glass);
+  color: var(--navy);
+}
+@media (max-width: 979px) { .account-ring { display: none; } }
+
+@media (prefers-reduced-motion: no-preference) and (hover: hover) {
+  .metric-card:hover { transform: translateY(-3px); box-shadow: 0 8px 21px rgb(17 19 33 / 10%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .metric-card { transition: none; }
+}

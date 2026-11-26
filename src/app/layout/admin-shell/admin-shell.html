@@ -1,46 +1,64 @@
-﻿<div class="admin-shell" [class.collapsed]="collapsed()" [class.drawer-open]="drawerOpen()"
-     (keydown.escape)="drawerOpen() && closeDrawer(mobileToggle)">
+<div class="admin-shell" [class.panel-open]="openGroup()" [class.drawer-open]="drawerOpen()"
+     (keydown.escape)="dismissNavigation($event)">
   <header class="topbar">
-    <button type="button" class="navigation-toggle desktop-toggle" aria-controls="admin-sidebar"
-            [attr.aria-expanded]="!collapsed()" (click)="collapsed.update(value => !value)">
-      <span class="menu-icon" aria-hidden="true"></span>
-      <span class="visually-hidden">{{ collapsed() ? 'Expand navigation' : 'Collapse navigation' }}</span>
+    <button #desktopToggle type="button" class="navigation-toggle desktop-toggle" aria-controls="admin-module-panel"
+            [attr.aria-expanded]="!!openGroup()" (click)="togglePanel(desktopToggle, $event.detail === 0)">
+      <svg width="18" height="14" viewBox="0 0 18 14" aria-hidden="true">
+        <path d="M0 1h18M0 7h18M0 13h18" stroke="currentColor" stroke-width="2" />
+      </svg>
+      <span class="visually-hidden">{{ openGroup() ? 'Collapse navigation' : 'Expand navigation' }}</span>
     </button>
     <button #mobileToggle type="button" class="navigation-toggle mobile-toggle" aria-controls="admin-sidebar"
-            [attr.aria-expanded]="drawerOpen()" (click)="drawerOpen.update(value => !value)">
-      <span class="menu-icon" aria-hidden="true"></span>
+            [attr.aria-expanded]="drawerOpen()" (click)="toggleDrawer()">
+      <svg width="18" height="14" viewBox="0 0 18 14" aria-hidden="true">
+        <path d="M0 1h18M0 7h18M0 13h18" stroke="currentColor" stroke-width="2" />
+      </svg>
       <span class="visually-hidden">{{ drawerOpen() ? 'Close navigation' : 'Open navigation' }}</span>
     </button>
     <div class="brand">
-      <span class="brand-mark" aria-hidden="true">W</span>
-      <span>WayHunter <small>Admin</small></span>
+      <span>Way<b class="brand-accent">Hunter</b> <small class="brand-caption">Admin Portal</small></span>
     </div>
     @if (preview) {
       <span class="preview-label">Development preview</span>
     }
   </header>
 
-  <aside class="sidebar" id="admin-sidebar">
-    <nav aria-label="Admin modules">
+  <aside #sidebar class="sidebar" id="admin-sidebar" aria-label="Admin navigation">
+    <nav class="navigation-rail" aria-label="Admin navigation groups">
+      <svg class="rail-brand" width="44" height="44" viewBox="0 0 100 100" preserveAspectRatio="none"
+           role="img" aria-label="WayHunter">
+        <path fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round"
+              stroke-linejoin="round" d="m19 69 19-29 12 16 14-27 20 40H19m38-26 7 6 7-6" />
+      </svg>
       @for (group of groups; track group.label) {
-        <div class="nav-group">
-          <h2>{{ group.label }}</h2>
-          @for (link of group.links; track link.path) {
-            <a [routerLink]="link.path" routerLinkActive="active" ariaCurrentWhenActive="page"
-               (click)="drawerOpen() && closeDrawer(mobileToggle)">{{ link.label }}</a>
-          }
-        </div>
+        <button #trigger type="button" class="group-button" [class.current]="activeGroup() === group"
+                [attr.aria-label]="group.label" [title]="group.label" aria-controls="admin-module-panel"
+                [attr.aria-expanded]="openGroup() === group"
+                (click)="toggleGroup(group, trigger, $event.detail === 0)">
+          <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.7"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path [attr.d]="group.icon" />
+          </svg>
+        </button>
+      }
+    </nav>
+    <nav id="admin-module-panel" class="module-panel" aria-label="Admin modules" [attr.inert]="openGroup() ? null : ''">
+      @if (openGroup(); as group) {
+        <h2 class="nav-heading">{{ group.label }}</h2>
+        @for (link of group.links; track link.path) {
+          <a class="nav-link" [routerLink]="link.path" routerLinkActive="active" ariaCurrentWhenActive="page">{{ link.label }}</a>
+        }
       }
     </nav>
   </aside>
 
   @if (drawerOpen()) {
-    <div class="scrim" aria-hidden="true" (click)="closeDrawer(mobileToggle)"></div>
+    <div class="scrim" aria-hidden="true" (click)="closeDrawer()"></div>
   }
 
   <main class="main-area">
     <div class="page-content">
-      <h1>{{ title() }}</h1>
+      <h1 class="page-title" [class.visually-hidden]="title() === 'Dashboard'">{{ title() }}</h1>
       <router-outlet />
     </div>
   </main>
