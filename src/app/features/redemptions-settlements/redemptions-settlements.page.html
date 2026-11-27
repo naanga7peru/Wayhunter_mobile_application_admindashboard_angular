@@ -2,12 +2,17 @@
   <header class="intro">
     <div class="labels">
       <wh-status-badge label="ADM-13 / M6" />
-      <wh-status-badge tone="warning" label="Demo Data" />
+      @if (!live) {
+        <wh-status-badge tone="warning" label="Demo Data" />
+      }
     </div>
     <h2>Redemptions &amp; Settlements</h2>
     <p>Review voucher requests, track issuance, and inspect academic demo redemption history.</p>
   </header>
 
+  @if (live) {
+    <wh-redemption-queue />
+  } @else {
   @if (state().kind === 'loading') {
     <wh-loading-state message="Loading sample redemption records…" />
   } @else if (state().kind === 'error') {
@@ -185,5 +190,6 @@
       <p class="muted section-note">Sample events trace the reservation, review, debit, and issuance lifecycle. Academic demo reconciliation covers Coins and vouchers only.</p>
       <wh-data-table caption="Sample redemption audit events" [rows]="audit()" [columns]="auditColumns" [rowKey]="auditKey" />
     </wh-card>
+  }
   }
 </div>
