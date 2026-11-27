@@ -102,6 +102,22 @@ export class AdminShell {
     }
   }
 
+  protected wrapDrawerFocus(event: KeyboardEvent): void {
+    if (event.key !== 'Tab' || event.altKey || event.ctrlKey || event.metaKey) return;
+    const drawer = this.drawer().nativeElement;
+    const controls = Array.from(drawer.querySelectorAll<HTMLElement>('button:not(:disabled), a[href]'))
+      .filter(control => control.tabIndex >= 0 && control.getClientRects().length > 0);
+    const first = controls[0];
+    const last = controls.at(-1);
+
+    // The native modal keeps the page inert. Handle only the edges where Tab can reach browser chrome.
+    const boundary = event.shiftKey ? first : last;
+    if (boundary && drawer.ownerDocument.activeElement === boundary) {
+      event.preventDefault();
+      (event.shiftKey ? last : first)?.focus();
+    }
+  }
+
   @HostListener('window:resize')
   protected closeDrawerOnDesktop(): void {
     if (this.drawerOpen() && window.matchMedia('(min-width: 1101px)').matches) {

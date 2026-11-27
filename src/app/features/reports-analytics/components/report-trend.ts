@@ -46,7 +46,7 @@ import { TrendPoint } from '../models/reports-analytics-view';
       border-block-end: 1px solid var(--control-border);
       background: repeating-linear-gradient(to top, transparent 0 calc(25% - 1px), var(--line) calc(25% - 1px) 25%);
     }
-    .bars span { flex: 1; max-width: 3rem; border-radius: .35rem .35rem 0 0; background: linear-gradient(#6889e6, var(--accent)); }
+    .bars span { flex: 1; max-width: 3rem; border-radius: .35rem .35rem 0 0; background: var(--accent); }
     summary { cursor: pointer; color: var(--accent); padding-block: .55rem; font-weight: 650; }
   `,
 })

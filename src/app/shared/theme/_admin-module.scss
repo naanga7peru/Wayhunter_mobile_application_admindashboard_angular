@@ -1,0 +1,174 @@
+// Scope the shared presentation layer to the 14 modules in this rollout.
+$module-hosts: wayhunter-hunter-verification-page,
+  wayhunter-advertisements-page,
+  wayhunter-places-page,
+  wayhunter-trips-historical-routes-page,
+  wayhunter-hazards-page,
+  wayhunter-group-trips-page,
+  wayhunter-games-page,
+  wayhunter-coins-rewards-page,
+  wayhunter-merchants-voucher-inventory-page,
+  wayhunter-redemptions-settlements-page,
+  wayhunter-campaigns-page,
+  wayhunter-reports-analytics-page,
+  wayhunter-notifications-page,
+  wayhunter-settings-security-audit-page;
+
+@mixin apply {
+  .admin-shell .page-content :is(#{$module-hosts}) {
+    color: var(--ink);
+
+    :is(.hero, .intro) {
+      padding: clamp(1rem, 2.6vw, 1.75rem);
+      border: 1px solid var(--line);
+      border-block-start: 2px solid var(--gold);
+      border-radius: var(--radius-panel);
+      background: linear-gradient(110deg, var(--glass), var(--wash));
+      box-shadow: var(--panel-shadow);
+    }
+
+    :is(.hero, .intro) h2 {
+      color: var(--navy);
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: clamp(1.5rem, 3vw, 2.25rem);
+      font-weight: 400;
+      letter-spacing: -.035em;
+      line-height: 1.15;
+    }
+
+    :is(.hero, .intro) p,
+    .muted {
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    :is(.card, .details, .decision, .decision-preview, .voucher-summary) {
+      min-width: 0;
+      border-color: var(--line);
+      border-radius: var(--radius-panel);
+      background: var(--glass);
+      box-shadow: var(--panel-shadow);
+    }
+
+    wh-card { color: var(--ink); }
+
+    :is(.metrics, .kpis, .overview-grid, .stages) :is(.card, wh-card):first-child {
+      border-block-start: 2px solid var(--gold);
+    }
+
+    :is(.availability, .state-label, .status-label) {
+      width: fit-content;
+      max-width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--wash);
+      color: var(--ink);
+      font-size: .8125rem;
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+
+    :is(.availability-message, .directory-state, .catalog-state, .activity-state,
+        .report-state, .queue-state, .state-message, .result-box, .policy) {
+      border-color: var(--line);
+      border-inline-start: 3px solid var(--blue);
+      border-radius: var(--radius-control);
+      background: var(--wash);
+      color: var(--ink);
+      line-height: 1.55;
+    }
+
+    :is(.table-scroll, wh-data-table .scroll) {
+      max-width: 100%;
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-control);
+      background: var(--glass);
+    }
+
+    :is(.table-scroll, wh-data-table .scroll):focus-visible {
+      outline: 3px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    table { color: var(--ink); }
+
+    :is(thead, th) {
+      background: var(--workspace-bg);
+      color: var(--navy);
+    }
+
+    th { font-weight: 700; }
+    tbody tr { border-block-start-color: var(--line); }
+    tbody tr:hover { background: var(--wash); }
+
+    :is(input, select, textarea) {
+      min-width: 0;
+      min-height: 44px;
+      border: 1px solid var(--control-border);
+      border-radius: var(--radius-control);
+      background: var(--glass);
+      color: var(--ink);
+      font: inherit;
+    }
+
+    :is(input, select, textarea):focus-visible {
+      outline: 3px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    :is(input, select, textarea, button):disabled {
+      opacity: 1;
+      border-color: var(--line);
+      background: var(--neutral-bg);
+      color: var(--muted);
+      cursor: not-allowed;
+    }
+
+    button:not(:disabled):not(.title-button):not([data-variant='outline']):not([data-variant='ghost']):not([data-variant='secondary']):not([data-variant='danger']) {
+      border-color: var(--navy);
+      border-radius: var(--radius-control);
+      background: var(--navy);
+      color: var(--glass);
+      font-weight: 700;
+      transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+    }
+
+    button:not(:disabled):not(.title-button):not([data-variant='outline']):not([data-variant='ghost']):not([data-variant='secondary']):not([data-variant='danger']):hover {
+      border-color: var(--accent-hover);
+      background: var(--accent-hover);
+    }
+
+    button:focus-visible,
+    a:focus-visible,
+    summary:focus-visible {
+      outline: 3px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    :is(.detail, .data-list > div, .records li, .queue li, .timeline li) {
+      border-color: var(--line);
+    }
+
+    .eyebrow { color: var(--sidebar-gold-ink); }
+    :is(.field-error, .file-error, .failure) { color: var(--danger-ink); }
+
+    @media (max-width: 64rem) {
+      :is(.review-grid, .content-grid) { grid-template-columns: minmax(0, 1fr); }
+    }
+
+    @media (max-width: 46rem) {
+      :is(.filters, .toolbar, .intake, .decision-actions, .editor-actions) { min-width: 0; }
+      :is(.table-scroll, wh-data-table .scroll) { overscroll-behavior-inline: contain; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        scroll-behavior: auto !important;
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+      }
+    }
+  }
+}

@@ -19,7 +19,7 @@
   </aside>
 
   <dialog #drawer class="drawer" id="admin-drawer" aria-label="Admin navigation"
-          (cancel)="closeDrawer($event)" (close)="restoreDrawerFocus()">
+          (cancel)="closeDrawer($event)" (close)="restoreDrawerFocus()" (keydown)="wrapDrawerFocus($event)">
     <button type="button" class="close-drawer" autofocus (click)="closeDrawer()">Close navigation</button>
     <ng-container *ngTemplateOutlet="navigation; context: { prefix: 'drawer' }" />
   </dialog>
