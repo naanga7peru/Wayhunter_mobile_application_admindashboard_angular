@@ -1,17 +1,21 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, isDevMode, PendingTasks, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, Injector, isDevMode, PendingTasks, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
+import { AdminReadBlockedError } from '../../core/http/api-client.service';
+import { ApiError } from '../../core/http/api-error';
 import { UiButton } from '../../shared/ui/button';
 import { UiCard } from '../../shared/ui/card';
 import { UiSearchInput } from '../../shared/ui/search-input';
 import { UiEmptyState, UiErrorState, UiLoadingState } from '../../shared/ui/states';
 import { UiStatusBadge } from '../../shared/ui/status-badge';
 import { GAME_CREATION_QUEUE_SOURCE, GameAdminQueueItemDto } from './game-creation-queue';
+import { AdminGamesQueueApiService } from './data-access/admin-games-queue-api.service';
 import { GamesManagementFoundation } from './management/games-management-foundation';
 
 type QueueState =
   | { kind: 'loading' }
-  | { kind: 'error' }
+  | { kind: 'error'; message: string; retry: boolean }
   | { kind: 'ready'; items: readonly GameAdminQueueItemDto[] };
 
 @Component({
@@ -28,10 +32,15 @@ export class GamesPage {
     heading: 'Game Creation Review Queue',
   };
   private readonly source = inject(GAME_CREATION_QUEUE_SOURCE);
+  private readonly injector = inject(Injector);
   private readonly pendingTasks = inject(PendingTasks);
-  protected readonly demoPreview = isDevMode() && inject(ActivatedRoute).parent?.routeConfig?.path === 'preview';
+  private readonly workspace = inject(ActivatedRoute).parent?.routeConfig?.path;
+  protected readonly demoPreview = isDevMode() && this.workspace === 'preview';
+  protected readonly live = this.workspace === 'admin';
   protected readonly state = signal<QueueState>({ kind: 'loading' });
   protected readonly search = signal('');
+  protected readonly page = signal(0);
+  protected readonly pageSize = 20;
   private readonly selectedId = signal<string | null>(null);
   private detailsTrigger?: HTMLButtonElement;
   private decisionTrigger?: HTMLButtonElement;
@@ -63,29 +72,54 @@ export class GamesPage {
   protected readonly selected = computed(() =>
     this.filtered().find(item => item.gameId === this.selectedId()),
   );
+  protected readonly visible = computed(() => this.live
+    ? this.filtered().slice(this.page() * this.pageSize, (this.page() + 1) * this.pageSize)
+    : this.filtered(),
+  );
 
   ngOnInit(): void {
-    if (this.demoPreview) this.load();
+    if (this.demoPreview || this.live) this.load();
   }
 
   protected load(): void {
+    if (!this.demoPreview && !this.live) return;
     this.state.set({ kind: 'loading' });
     this.pendingTasks.run(async () => {
       try {
-        this.state.set({ kind: 'ready', items: await this.source() });
-      } catch {
-        this.state.set({ kind: 'error' });
+        const items = this.demoPreview
+          ? await this.source()
+          : await firstValueFrom(this.injector.get(AdminGamesQueueApiService).list());
+        this.state.set({ kind: 'ready', items });
+      } catch (error) {
+        const denied = error instanceof AdminReadBlockedError ||
+          (error instanceof ApiError && [401, 403].includes(error.status));
+        const unavailable = error instanceof ApiError && error.status === 503;
+        this.state.set({
+          kind: 'error',
+          retry: !denied,
+          message: this.demoPreview ? 'Sample submissions could not be loaded.'
+            : denied ? 'Your session does not have access to game submissions.'
+            : unavailable ? 'The pending game creation queue is temporarily unavailable.'
+            : 'Pending game submissions could not be loaded.',
+        });
       }
     });
   }
 
   protected updateSearch(value: string): void {
     this.search.set(value);
+    if (this.live) this.changePage(0);
     if (!this.selected()) {
       this.selectedId.set(null);
       this.detailsTrigger = undefined;
       this.resetDecision();
     }
+  }
+
+  protected changePage(page: number): void {
+    this.selectedId.set(null);
+    this.detailsTrigger = undefined;
+    this.page.set(page);
   }
 
   protected showDetails(item: GameAdminQueueItemDto, trigger: HTMLButtonElement, heading: HTMLElement): void {

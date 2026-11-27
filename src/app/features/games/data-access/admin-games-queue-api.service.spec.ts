@@ -129,4 +129,40 @@ describe('AdminGamesQueueApiService', () => {
     expect(decide).not.toHaveBeenCalled();
     TestBed.inject(HttpTestingController).expectNone(() => true);
   });
+
+  it('renders a protected response through the existing page without decision previews', async () => {
+    allowMockedHttp();
+    TestBed.overrideProvider(ActivatedRoute, {
+      useValue: { parent: { routeConfig: { path: 'admin' } } },
+    });
+    const fixture = TestBed.createComponent(GamesPage);
+    fixture.detectChanges();
+    const page: HTMLElement = fixture.nativeElement;
+    expect(page.textContent).toContain('Loading game submissions');
+    TestBed.inject(HttpTestingController).expectOne(queueUrl).flush([submission]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const title = page.querySelector<HTMLButtonElement>('tbody button')!;
+    expect(title.textContent).toContain(submission.gameTitle);
+    title.click();
+    fixture.detectChanges();
+    expect(page.querySelector('#game-creation-details')?.textContent).toContain(submission.gameId);
+    expect(page.querySelector('#creation-decision-preview')).toBeNull();
+    expect(page.textContent).not.toContain('Demo data');
+  });
+
+  it('shows unavailable when the protected queue returns 503', async () => {
+    allowMockedHttp();
+    TestBed.overrideProvider(ActivatedRoute, {
+      useValue: { parent: { routeConfig: { path: 'admin' } } },
+    });
+    const fixture = TestBed.createComponent(GamesPage);
+    fixture.detectChanges();
+    TestBed.inject(HttpTestingController).expectOne(queueUrl)
+      .flush(null, { status: 503, statusText: 'Service Unavailable' });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('temporarily unavailable');
+    expect(fixture.nativeElement.querySelector('tbody')).toBeNull();
+  });
 });
