@@ -289,7 +289,7 @@ describe('Admin workspace integration', () => {
     expect(request.request.headers.has('Authorization')).toBe(false);
     request.flush({ service: 'Wayhunter.Api', status: 'ok', timestampUtc: '2026-11-23T00:00:00Z' });
     harness.detectChanges();
-    expect(status.textContent).toBe('API responded: ok');
+    expect(status.textContent).toBe('Backend connected');
     expect(TestBed.inject(AdminAccessService).decide().allowed).toBe(false);
 
     button.click();
@@ -300,7 +300,7 @@ describe('Admin workspace integration', () => {
       { status: 401, statusText: 'Unauthorized' },
     );
     harness.detectChanges();
-    expect(status.textContent).toContain('Backend not reachable');
+    expect(status.textContent).toBe('Backend unavailable');
     expect(status.textContent).not.toContain('Internal diagnostics');
 
     await harness.navigateByUrl('/admin/dashboard');
