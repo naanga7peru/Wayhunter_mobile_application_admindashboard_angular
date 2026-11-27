@@ -157,7 +157,7 @@
   <wh-card class="platform" heading="Platform health">
     <div class="diagnostics">
       <div>
-        <p class="muted">Development diagnostics for the backend availability endpoint.</p>
+        <p class="muted">This check reports API connectivity only. Database and Admin access require separate verification.</p>
         <p class="health-status" role="status">{{ backendStatus() }}</p>
       </div>
       <button whButton variant="outline" [loading]="checkingBackend()" (click)="checkBackend()">Check backend /health</button>

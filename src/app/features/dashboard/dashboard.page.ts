@@ -2,7 +2,7 @@ import { DatePipe, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { catchError, defaultIfEmpty, defer, finalize, map, of, Subject, switchMap, take } from 'rxjs';
+import { catchError, defaultIfEmpty, defer, map, of, Subject, switchMap, take, timeout } from 'rxjs';
 import { ApiClientService } from '../../core/http/api-client.service';
 import { UiButton } from '../../shared/ui/button';
 import { UiCard } from '../../shared/ui/card';
@@ -58,8 +58,8 @@ export class DashboardPage {
   protected readonly districtScale = computed(() =>
     Math.max(1, ...this.districtActivity().map(row => row.trips)),
   );
-  protected readonly checkingBackend = signal(false);
   protected readonly backendStatus = signal('Not checked');
+  protected readonly checkingBackend = computed(() => this.backendStatus() === 'Checking backend');
 
   protected readonly ranges: readonly FilterOption[] = [
     { value: '7', label: 'Last 7 days' },
@@ -125,14 +125,14 @@ export class DashboardPage {
 
   protected checkBackend(): void {
     if (this.checkingBackend()) return;
-    this.checkingBackend.set(true);
-    this.backendStatus.set('Checking backend…');
+    this.backendStatus.set('Checking backend');
     this.api.getHealth().pipe(
+      timeout({ first: 5000 }),
+      map(health => health?.service === 'Wayhunter.Api' && health.status === 'ok'
+        ? 'Backend connected' : 'Backend unavailable'),
+      defaultIfEmpty('Backend unavailable'),
+      catchError(() => of('Backend unavailable')),
       takeUntilDestroyed(this.destroyRef),
-      finalize(() => this.checkingBackend.set(false)),
-    ).subscribe({
-      next: health => this.backendStatus.set('API responded: ' + health.status),
-      error: () => this.backendStatus.set('Backend not reachable. Run Wayhunter.Api on port 5055.'),
-    });
+    ).subscribe(status => this.backendStatus.set(status));
   }
 }

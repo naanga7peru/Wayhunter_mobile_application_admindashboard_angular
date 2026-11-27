@@ -379,16 +379,16 @@ describe('ADM-02 Dashboard', () => {
 
     checks[0].error(new Error('Backend offline'));
     harness.detectChanges();
-    expect(status.textContent).toContain('Backend not reachable');
+    expect(status.textContent).toBe('Backend unavailable');
     expect(page.querySelector('.dashboard-source')?.textContent).toBe(source);
     expect(button.disabled).toBe(false);
     expect(page.querySelector('.metrics')?.textContent).toBe(metrics);
 
     button.click();
-    checks[1].next({ service: 'WayHunter.Api', status: 'ok', timestampUtc: '2026-11-22T12:00:00Z' });
+    checks[1].next({ service: 'Wayhunter.Api', status: 'ok', timestampUtc: '2026-11-22T12:00:00Z' });
     checks[1].complete();
     harness.detectChanges();
-    expect(status.textContent).toBe('API responded: ok');
+    expect(status.textContent).toBe('Backend connected');
     expect(page.querySelector('.dashboard-source')?.textContent).toBe(source);
     expect(button.disabled).toBe(false);
     expect(page.querySelector('.metrics')?.textContent).toBe(metrics);
