@@ -42,11 +42,11 @@ describe('Admin workspace integration', () => {
       const harness = await RouterTestingHarness.create('/preview/authentication');
       const router = TestBed.inject(Router);
       const previewUrl = `/preview/${path}`;
-      const groupButtons = Array.from(harness.routeNativeElement!.querySelectorAll<HTMLButtonElement>('.group-button'));
-      groupButtons.find(button => button.getAttribute('aria-label') === group)!.click();
+      const groupButtons = Array.from(harness.routeNativeElement!.querySelectorAll<HTMLButtonElement>('.sidebar .group-button'));
+      groupButtons.find(button => button.querySelector('span')?.textContent === group)!.click();
       harness.detectChanges();
       const link = harness.routeNativeElement?.querySelector<HTMLAnchorElement>(
-        `nav[aria-label="Admin modules"] a[href="${previewUrl}"]`,
+        `.sidebar .module-list:not([hidden]) a[href="${previewUrl}"]`,
       );
 
       expect(link?.textContent?.trim()).toBe(label);
@@ -162,22 +162,22 @@ describe('Admin workspace integration', () => {
     const harness = await RouterTestingHarness.create('/preview/dashboard');
     const router = TestBed.inject(Router);
     const shell = harness.routeNativeElement!;
-    const groups = Array.from(shell.querySelectorAll<HTMLButtonElement>('.group-button'));
-    const panel = shell.querySelector('nav[aria-label="Admin modules"]')!;
+    const groups = Array.from(shell.querySelectorAll<HTMLButtonElement>('.sidebar .group-button'));
     const registeredPaths = router.config.find(route => route.path === 'admin')!.children!
       .filter(route => route.path)
       .map(route => '/preview/' + route.path);
     const visited: string[] = [];
 
     expect(groups).toHaveLength(5);
-    expect(panel.hasAttribute('inert')).toBe(true);
+    expect(groups[0].getAttribute('aria-expanded')).toBe('true');
     expect(groups[0].classList.contains('current')).toBe(true);
 
     for (const group of groups) {
-      group.click();
+      if (group.getAttribute('aria-expanded') !== 'true') group.click();
       harness.detectChanges();
       expect(groups.filter(button => button.getAttribute('aria-expanded') === 'true')).toEqual([group]);
-      expect(panel.querySelector('h2')?.textContent?.trim()).toBe(group.getAttribute('aria-label'));
+      const panel = shell.querySelector<HTMLElement>('#' + group.getAttribute('aria-controls'))!;
+      expect(panel.hidden).toBe(false);
       const urls = Array.from(panel.querySelectorAll<HTMLAnchorElement>('a'), link => link.pathname);
       expect(urls.length).toBeGreaterThan(0);
 
@@ -200,19 +200,42 @@ describe('Admin workspace integration', () => {
     expect(visited.sort()).toEqual(registeredPaths.sort());
   });
 
+  it.each(['', '?from=review', '#analytics', '?from=review#analytics'])(
+    'keeps Dashboard current with URL suffix "%s" and clears it on another route',
+    async suffix => {
+      const harness = await RouterTestingHarness.create('/preview/dashboard' + suffix);
+      const sidebar = () => harness.routeNativeElement!.querySelector('.sidebar')!;
+      const currentLink = () => sidebar().querySelector('a[aria-current="page"]');
+      const expanded = () => Array.from(sidebar().querySelectorAll('button[aria-expanded="true"]'));
+
+      expect(currentLink()?.getAttribute('href')).toBe('/preview/dashboard');
+      expect(currentLink()?.classList.contains('active')).toBe(true);
+      expect(expanded()).toHaveLength(1);
+      expect(expanded()[0].textContent?.trim()).toBe('Workspace');
+
+      await harness.navigateByUrl('/preview/reports-analytics?from=review#analytics');
+      expect(currentLink()?.getAttribute('href')).toBe('/preview/reports-analytics');
+      expect(sidebar().querySelector('a[href="/preview/dashboard"]')?.classList.contains('active')).toBe(false);
+
+      await harness.navigateByUrl('/preview/users');
+      expect(currentLink()?.getAttribute('href')).toBe('/preview/users');
+      expect(expanded()).toHaveLength(1);
+      expect(expanded()[0].textContent?.trim()).toBe('Community & Safety');
+    },
+  );
+
   it('dismisses the expanded group on Escape and restores focus to its trigger', async () => {
     const harness = await RouterTestingHarness.create('/preview/dashboard');
     const shell = harness.routeNativeElement!;
-    const trigger = shell.querySelector<HTMLButtonElement>('.desktop-toggle')!;
-    trigger.click();
-    harness.detectChanges();
+    const trigger = shell.querySelector<HTMLButtonElement>('.sidebar .group-button.current')!;
+
     const link = shell.querySelector<HTMLAnchorElement>('.nav-link')!;
     expect(trigger.getAttribute('aria-expanded')).toBe('true');
     link.focus();
     link.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     harness.detectChanges();
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
-    expect(shell.querySelector('.nav-link')).toBeNull();
+    expect(link.closest('ul')?.hidden).toBe(true);
     expect(document.activeElement).toBe(trigger);
   });
 

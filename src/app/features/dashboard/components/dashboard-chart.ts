@@ -1,4 +1,4 @@
-import { DecimalPipe } from '@angular/common';
+﻿import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { UiCard } from '../../../shared/ui/card';
 import { UiDataTable, TableColumn } from '../../../shared/ui/data-table';
@@ -57,15 +57,15 @@ interface ChartRow { label: string; value: number; }
       border-radius: .6rem .6rem 0 0;
     }
     .bars { display: flex; align-items: end; justify-content: space-around; gap: 3%; padding-inline: 3%; }
-    .bars span { width: 100%; max-width: 1.2rem; border-radius: 99px; background: #b8b5ae; }
-    .bars span.peak { background: linear-gradient(var(--coral), var(--pink)); }
+    .bars span { width: 100%; max-width: 1.2rem; border-radius: 99px; background: var(--blue); }
+    .bars span.peak { background: var(--accent); }
     svg { display: block; }
     @media (prefers-reduced-motion: no-preference) {
-      .plot { animation: chart-in 300ms ease-out; }
+      .plot { animation: chart-in 180ms ease-out; }
       @keyframes chart-in { from { opacity: .35; transform: translateY(4px); } }
     }
     polygon { fill: var(--chart-fill); opacity: .8; }
-    polyline { fill: none; stroke: var(--chart-ink); stroke-width: 2.5px; stroke-linejoin: round; }
+    polyline { fill: none; stroke: var(--chart-ink); stroke-width: 2.5px; stroke-dasharray: 6 3; stroke-linejoin: round; }
     summary { width: fit-content; padding-block: .35rem; cursor: pointer; color: var(--accent); font-size: .875rem; font-weight: 650; }
     details[open] wh-data-table { margin-block-start: .65rem; }
   `,
