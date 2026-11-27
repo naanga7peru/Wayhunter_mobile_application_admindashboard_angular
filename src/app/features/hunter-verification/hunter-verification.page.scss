@@ -138,6 +138,12 @@ th {
   background: var(--neutral-bg);
 }
 
+td {
+  padding: .65rem;
+  border-block-start: 1px solid var(--line);
+  overflow-wrap: anywhere;
+}
+
 .queue-state {
   padding: .85rem;
   border-radius: var(--radius-control);

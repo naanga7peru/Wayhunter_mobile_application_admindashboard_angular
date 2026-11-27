@@ -1,6 +1,10 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { ActivatedRoute } from '@angular/router';
+import { Subject } from 'rxjs';
+import { ApiError } from '../../core/http/api-error';
+import { AdminHunterApiService, HunterSubmissionDto } from './admin-hunter-api.service';
 import { HunterVerificationPage } from './hunter-verification.page';
 
 describe('Hunter Verification', () => {
@@ -59,5 +63,65 @@ describe('Hunter Verification', () => {
       action.click();
     }
     expect(page.querySelectorAll('input:enabled, select:enabled, button:enabled')).toHaveLength(0);
+  });
+});
+
+describe('Hunter Verification protected queue', () => {
+  let response: Subject<readonly HunterSubmissionDto[]>;
+
+  beforeEach(() => {
+    response = new Subject();
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: ActivatedRoute, useValue: { parent: { routeConfig: { path: 'admin' } } } },
+        { provide: AdminHunterApiService, useValue: { listPending: () => response } },
+      ],
+    });
+  });
+
+  it('shows loading and then an empty queue', () => {
+    const fixture = TestBed.createComponent(HunterVerificationPage);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role="status"]').textContent).toContain('Loading');
+    response.next([]);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role="status"]').textContent).toContain('No applications');
+  });
+
+  it.each([[401, 'does not have access'], [403, 'does not have access'],
+    [500, 'could not be loaded'], [503, 'queue unavailable']])(
+    'shows the correct message for HTTP %s',
+    (status, message) => {
+      const fixture = TestBed.createComponent(HunterVerificationPage);
+      fixture.detectChanges();
+      response.error(new ApiError(status));
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('[role="status"]').textContent).toContain(message);
+    },
+  );
+
+  it('paginates returned applications and restarts at page one when filtering', () => {
+    const fixture = TestBed.createComponent(HunterVerificationPage);
+    fixture.detectChanges();
+    response.next(Array.from({ length: 21 }, (_, index) => ({
+      submissionId: `ref-${index}`,
+      placeName: `Place ${index}`,
+      district: index === 20 ? 'Kandy' : 'Colombo',
+      status: 1,
+      createdAtUtc: '2026-11-26T12:00:00Z',
+      submittedAtUtc: null,
+    })));
+    fixture.detectChanges();
+    const page: HTMLElement = fixture.nativeElement;
+    expect(page.querySelectorAll('tbody tr')).toHaveLength(20);
+    page.querySelector<HTMLButtonElement>('nav button:last-child')!.click();
+    fixture.detectChanges();
+    expect(page.querySelector('tbody')?.textContent).toContain('Kandy');
+    const input = page.querySelector<HTMLInputElement>('#hunter-live-query')!;
+    input.value = ' colombo ';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(page.querySelectorAll('tbody tr')).toHaveLength(20);
+    expect(page.querySelector('tbody')?.textContent).not.toContain('Kandy');
   });
 });
