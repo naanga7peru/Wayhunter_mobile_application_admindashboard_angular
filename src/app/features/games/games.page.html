@@ -12,16 +12,16 @@
   <section [attr.aria-labelledby]="creationSection.id">
     <wh-card>
       <h2 class="queue-heading" [id]="creationSection.id" tabindex="-1">Pending Game Creation Queue</h2>
-      @if (!demoPreview) {
+      @if (!demoPreview && !live) {
         <wh-empty-state message="The live game creation queue is unavailable." />
       } @else {
         @let queue = state();
         @switch (queue.kind) {
           @case ('loading') {
-            <wh-loading-state message="Loading sample submissions…" />
+            <wh-loading-state [message]="demoPreview ? 'Loading sample submissions…' : 'Loading game submissions…'" />
           }
           @case ('error') {
-            <wh-error-state message="Sample submissions could not be loaded." retryLabel="Retry" (retry)="load()" />
+            <wh-error-state [message]="queue.message" [retryLabel]="queue.retry ? 'Retry' : ''" (retry)="load()" />
           }
           @case ('ready') {
             <div class="queue-toolbar">
@@ -34,7 +34,7 @@
               />
             </div>
             @if (filtered().length) {
-              <p class="results" role="status">{{ filtered().length }} of {{ queue.items.length }} sample submissions shown</p>
+              <p class="results" role="status">{{ filtered().length }} of {{ queue.items.length }} {{ demoPreview ? 'sample submissions shown' : 'submissions match' }}</p>
               <p class="scroll-hint">Scroll the table to see all columns.</p>
               <div class="table-scroll" role="region" aria-label="Pending game submissions" tabindex="0">
                 <table aria-label="Pending game creation queue">
@@ -48,7 +48,7 @@
                     </tr>
                   </thead>
                   <tbody>
-                    @for (item of filtered(); track item.gameId) {
+                    @for (item of visible(); track item.gameId) {
                       <tr [class.active]="selected()?.gameId === item.gameId">
                         <th scope="row">
                           <button
@@ -70,10 +70,19 @@
                   </tbody>
                 </table>
               </div>
+              @if (live && filtered().length > pageSize) {
+                <nav class="decision-actions" aria-label="Game submission pages">
+                  <button whButton variant="outline" [disabled]="page() === 0"
+                          (click)="changePage(page() - 1)">Previous</button>
+                  <span aria-live="polite">Page {{ page() + 1 }}</span>
+                  <button whButton variant="outline" [disabled]="(page() + 1) * pageSize >= filtered().length"
+                          (click)="changePage(page() + 1)">Next</button>
+                </nav>
+              }
             } @else if (queue.items.length) {
-              <wh-empty-state message="No sample submissions match your search." />
+              <wh-empty-state [message]="demoPreview ? 'No sample submissions match your search.' : 'No submissions match your search.'" />
             } @else {
-              <wh-empty-state message="There are no pending sample submissions." />
+              <wh-empty-state [message]="demoPreview ? 'There are no pending sample submissions.' : 'There are no pending game submissions.'" />
             }
 
             <section id="game-creation-details" class="details" aria-labelledby="game-creation-details-title" (keydown.escape)="handleEscape($event)">
@@ -90,6 +99,7 @@
                     <div><dt>Creator user ID</dt><dd>{{ item.creatorUserId }}</dd></div>
                     <div><dt>Submitted (UTC)</dt><dd><time [attr.datetime]="item.submittedAtUtc">{{ item.submittedAtUtc | date:'dd MMM y, HH:mm:ss':'UTC' }} UTC</time></dd></div>
                   </dl>
+                  @if (demoPreview) {
                   <div class="decision-actions">
                     <button whButton variant="outline" aria-controls="creation-decision-preview"
                       [attr.aria-expanded]="decision() === 'approve'"
@@ -138,6 +148,7 @@
                       }
                     }
                   </section>
+                  }
                   <button whButton type="button" variant="outline" (click)="closeDetails()">Close details</button>
                 </div>
               } @else {
