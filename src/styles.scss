@@ -1,4 +1,7 @@
 ﻿@use './app/shared/theme/tokens';
+@use './app/shared/theme/admin-module' as admin-module;
+
+@include admin-module.apply;
 
 :root {
   font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;

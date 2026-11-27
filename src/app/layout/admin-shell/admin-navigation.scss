@@ -80,7 +80,10 @@
   overflow-wrap: anywhere;
 }
 .group-button:hover, .group-button[aria-expanded='true'] { background: var(--workspace-bg); }
-.group-button.current { border-color: var(--gold); }
+.group-button.current {
+  border-inline-start-color: var(--sidebar-gold-ink);
+  font-weight: 750;
+}
 .group-icon {
   box-sizing: content-box;
   padding: .2rem;
@@ -109,7 +112,7 @@
 .nav-link:hover { background: var(--sidebar-active-blue); }
 .nav-link.active {
   background: linear-gradient(105deg, var(--sidebar-active-blue), rgb(200 160 82 / 15%));
-  box-shadow: inset 3px 0 var(--gold);
+  box-shadow: inset 3px 0 var(--sidebar-light-gold);
   font-weight: 700;
 }
 .sidebar :focus-visible, .drawer :focus-visible {

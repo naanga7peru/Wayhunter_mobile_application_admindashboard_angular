@@ -51,7 +51,12 @@ dd { margin: .2rem 0 0; }
 }
 .creative-art.square { aspect-ratio: 1; width: min(100%, 11rem); background: linear-gradient(150deg, #24695e, #174a43); }
 .creative-art.promo { min-height: 9rem; background: linear-gradient(150deg, #695095, #45336c); }
-.creative-art span { font-size: .75rem; }
+.creative-art span {
+  justify-self: start;
+  padding: .2rem .4rem;
+  background: var(--navy);
+  font-size: .75rem;
+}
 .phone-sponsor { margin: .4rem 0 0; }
 
 .queue { margin: 0; padding: 0; list-style: none; }
