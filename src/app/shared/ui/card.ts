@@ -12,7 +12,7 @@
     :host {
       display: block; min-width: 0; padding: clamp(1rem, 3vw, 1.75rem);
       border: 1px solid var(--line); border-radius: var(--radius-panel);
-      background: var(--glass); box-shadow: var(--panel-shadow); backdrop-filter: blur(12px);
+      background: var(--glass); box-shadow: var(--panel-shadow); backdrop-filter: var(--panel-backdrop, blur(12px));
     }
     h2 { margin: 0 0 1rem; font-size: 1.15rem; }
   `,

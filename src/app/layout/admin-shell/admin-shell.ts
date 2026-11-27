@@ -1,6 +1,7 @@
-import { afterNextRender, Component, computed, ElementRef, inject, Injector, signal, viewChild } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { Component, computed, ElementRef, HostListener, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, NavigationEnd, NavigationSkipped, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { ActivatedRoute, IsActiveMatchOptions, NavigationEnd, NavigationSkipped, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
 
 interface MenuGroup {
@@ -12,17 +13,22 @@ interface MenuGroup {
 @Component({
   selector: 'wayhunter-admin-shell',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, RouterOutlet],
+  imports: [NgTemplateOutlet, RouterLink, RouterLinkActive, RouterOutlet],
   templateUrl: './admin-shell.html',
   styleUrls: ['./admin-shell.scss', './admin-navigation.scss'],
 })
 export class AdminShell {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly injector = inject(Injector);
   private readonly mobileToggle = viewChild.required<ElementRef<HTMLButtonElement>>('mobileToggle');
-  private readonly sidebar = viewChild.required<ElementRef<HTMLElement>>('sidebar');
-  private panelTrigger?: HTMLButtonElement;
+  private readonly drawer = viewChild.required<ElementRef<HTMLDialogElement>>('drawer');
+
+  protected readonly activeLinkOptions: IsActiveMatchOptions = {
+    paths: 'exact',
+    queryParams: 'ignored',
+    fragment: 'ignored',
+    matrixParams: 'ignored',
+  };
 
   protected readonly groups: MenuGroup[] = [
     { label: 'Workspace', icon: 'M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z', links: [
@@ -58,7 +64,7 @@ export class AdminShell {
   protected readonly activeGroup = computed(() => this.groups.find(group =>
     group.links.some(link => link.path === this.currentPath()),
   ));
-  protected readonly openGroup = signal<MenuGroup | undefined>(undefined);
+  protected readonly openGroup = signal<MenuGroup | undefined>(this.activeGroup());
   protected readonly drawerOpen = signal(false);
   protected readonly title = signal(this.pageTitle());
   protected readonly preview = this.route.snapshot.routeConfig?.path === 'preview';
@@ -70,58 +76,51 @@ export class AdminShell {
     ).subscribe(() => {
       this.title.set(this.pageTitle());
       this.currentPath.set(this.route.snapshot.firstChild?.routeConfig?.path);
+      this.openGroup.set(this.activeGroup());
       if (this.drawerOpen()) this.closeDrawer();
     });
   }
 
-  protected toggleGroup(group: MenuGroup, trigger: HTMLButtonElement, keyboard: boolean): void {
-    if (this.openGroup() === group) {
-      this.closePanel();
-      return;
-    }
-    this.openGroup.set(group);
-    this.panelTrigger = trigger;
-    if (keyboard) this.focusNavigation('.nav-link');
+  protected toggleGroup(group: MenuGroup): void {
+    this.openGroup.update(open => open === group ? undefined : group);
   }
 
-  protected togglePanel(trigger: HTMLButtonElement, keyboard: boolean): void {
-    if (this.openGroup()) this.panelTrigger = trigger;
-    this.toggleGroup(this.openGroup() ?? this.activeGroup() ?? this.groups[0], trigger, keyboard);
-  }
-
-  protected toggleDrawer(): void {
-    if (this.drawerOpen()) {
-      this.closeDrawer();
-      return;
-    }
-    this.openGroup.set(this.activeGroup() ?? this.groups[0]);
+  protected openDrawer(): void {
+    this.drawer().nativeElement.showModal();
     this.drawerOpen.set(true);
-    this.focusNavigation('.group-button[aria-expanded="true"]');
   }
 
-  protected closeDrawer(): void {
+  protected closeDrawer(event?: Event): void {
+    event?.preventDefault();
+    this.drawer().nativeElement.close();
     this.drawerOpen.set(false);
-    this.openGroup.set(undefined);
-    this.panelTrigger = undefined;
-    this.mobileToggle().nativeElement.focus();
   }
 
-  protected dismissNavigation(event: Event): void {
-    if (this.drawerOpen()) this.closeDrawer();
-    else if (this.openGroup()) this.closePanel();
-    else return;
-    event.stopPropagation();
+  protected restoreDrawerFocus(): void {
+    if (this.mobileToggle().nativeElement.getClientRects().length) {
+      this.mobileToggle().nativeElement.focus();
+    }
   }
 
-  private closePanel(): void {
-    this.openGroup.set(undefined);
-    this.panelTrigger?.focus();
-    this.panelTrigger = undefined;
+  @HostListener('window:resize')
+  protected closeDrawerOnDesktop(): void {
+    if (this.drawerOpen() && window.matchMedia('(min-width: 1101px)').matches) {
+      this.closeDrawer();
+      this.mobileToggle().nativeElement.closest('.admin-shell')
+        ?.querySelector<HTMLElement>('.sidebar .group-button.current')?.focus();
+    }
   }
 
-  private focusNavigation(selector: string): void {
-    afterNextRender(() => this.sidebar().nativeElement.querySelector<HTMLElement>(selector)?.focus(),
-      { injector: this.injector });
+  protected dismissGroup(event: Event, group: MenuGroup, trigger: HTMLButtonElement): void {
+    if (this.drawerOpen()) return;
+    event.preventDefault();
+    this.toggleGroup(group);
+    trigger.focus();
+  }
+
+  protected skipToContent(event: Event, content: HTMLElement): void {
+    event.preventDefault();
+    content.focus();
   }
 
   private pageTitle(): string {

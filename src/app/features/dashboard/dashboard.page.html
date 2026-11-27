@@ -1,8 +1,8 @@
 <div class="dashboard">
   <header class="intro">
     <div>
-      <wh-status-badge tone="warning" label="Demo / Sample Data" />
       <h2 class="intro-title">Analytics</h2>
+      <wh-status-badge tone="info" label="Demo / Sample Data" />
     </div>
     <div class="range-panel filter-width">
       <wh-filter-select label="Sample time range" [options]="ranges" [value]="range()"
@@ -42,7 +42,7 @@
       <h2 class="section-title" id="overview-heading">KPI overview</h2>
       <div class="metrics">
         @for (metric of sample.view.metrics; track metric.label; let first = $first; let index = $index) {
-          <wh-card class="metric-card" [class.metric-trips]="index === 1">
+          <wh-card class="metric-card" [class.metric-lead]="first" [class.metric-reviews]="index === 2">
             <svg class="metric-icon" width="1.65rem" height="1.65rem" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               @switch (index) {
@@ -55,21 +55,6 @@
             </svg>
             <h3 class="metric-label">{{ metric.label }}</h3>
             <p class="metric-value">{{ metric.value | number }}</p>
-            @if (first && metric.value > 0) {
-              <div class="account-ring" aria-hidden="true"
-                   [style.--new-share]="(100 * metric.change / metric.value) + '%'">
-                <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor"
-                     stroke-width="1.6" stroke-linecap="round" aria-hidden="true">
-                  <circle cx="9" cy="8" r="3"/><path d="M3 20v-2a5 5 0 0 1 5-5h2a5 5 0 0 1 5 5v2m2-12h5m-2.5-2.5v5"/>
-                </svg>
-              </div>
-            }
-            @if (index === 1) {
-              <svg class="metric-accent" viewBox="0 0 300 56" preserveAspectRatio="none" aria-hidden="true">
-                <path d="M0 32C31 32 55 55 87 46S130 16 162 24 208 53 241 36 276 18 300 20"/>
-                <path d="M0 43C38 37 64 14 95 19S143 48 172 43 216 13 246 17 280 27 300 36"/>
-              </svg>
-            }
             <p class="metric-detail">{{ metric.detail }}</p>
             <p class="trend" [class.decline]="metric.change < 0">
               <strong>
@@ -91,10 +76,41 @@
       </div>
     </section>
 
+  }
+  <wh-card class="reviews" heading="Review modules">
+    <ul class="review-list">
+      <li>
+        <a class="review-link" routerLink="../hunter-verification">
+          <span>Hunter verification</span>
+          <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+            <path d="M2 7h9m-3-3 3 3-3 3" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </a>
+      </li>
+      <li>
+        <a class="review-link" routerLink="../hazards">
+          <span>Reported hazards</span>
+          <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+            <path d="M2 7h9m-3-3 3 3-3 3" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </a>
+      </li>
+      <li>
+        <a class="review-link" routerLink="../redemptions-settlements">
+          <span>Voucher redemptions</span>
+          <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+            <path d="M2 7h9m-3-3 3 3-3 3" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </a>
+      </li>
+    </ul>
+  </wh-card>
+
+  @if (snapshot(); as sample) {
     <section class="district" aria-labelledby="district-activity-heading">
       <wh-card>
         <h2 id="district-activity-heading" class="district-title">Sample trip activity by district</h2>
-        <wh-status-badge tone="warning" label="Demo / Sample Data" />
+        <wh-status-badge tone="info" label="Demo / Sample Data" />
         <p class="district-note">District counts are synthetic. Selecting a district shows a subset of the all-district Sample trips total.</p>
         <div class="district-filter filter-width">
           <wh-filter-select label="Sample district" [options]="districts()" [(value)]="district" />
@@ -126,9 +142,7 @@
         }
       </wh-card>
     </section>
-  }
 
-  @if (snapshot(); as sample) {
     <wh-card class="activity operations" heading="Recent activities">
       <ul class="activity-summary" aria-label="Activity status counts">
         @for (badge of activitySummary(); track badge.status) {
@@ -139,34 +153,6 @@
                      [columns]="activityColumns" [rowKey]="activityKey" />
     </wh-card>
   }
-  <wh-card class="reviews" heading="Review modules">
-    <ul class="review-list">
-      <li>
-        <a class="review-link" routerLink="../hunter-verification">
-          <span>Hunter verification</span>
-          <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
-            <path d="M2 7h9m-3-3 3 3-3 3" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-        </a>
-      </li>
-      <li>
-        <a class="review-link" routerLink="../hazards">
-          <span>Reported hazards</span>
-          <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
-            <path d="M2 7h9m-3-3 3 3-3 3" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-        </a>
-      </li>
-      <li>
-        <a class="review-link" routerLink="../redemptions-settlements">
-          <span>Voucher redemptions</span>
-          <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
-            <path d="M2 7h9m-3-3 3 3-3 3" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-        </a>
-      </li>
-    </ul>
-  </wh-card>
 
   <wh-card class="platform" heading="Platform health">
     <div class="diagnostics">
