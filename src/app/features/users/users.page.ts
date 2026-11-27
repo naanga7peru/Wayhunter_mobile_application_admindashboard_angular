@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { UiCard } from '../../shared/ui/card';
 
 const directoryMessages = {
   unavailable: 'Admin user directory unavailable. Authorized access and a verified directory service are required.',
@@ -10,6 +11,7 @@ const directoryMessages = {
 
 @Component({
   standalone: true,
+  imports: [UiCard],
   selector: 'wayhunter-users-page',
   templateUrl: './users.page.html',
   styleUrl: './users.page.scss',
