@@ -4,7 +4,9 @@
       <h2 id="hunter-title">Hunter Verification</h2>
       <p>Review Hunter applications, assess submitted evidence, and record moderation decisions.</p>
     </div>
-    <span class="availability">Live integration unavailable</span>
+    @if (!live) {
+      <span class="availability">Live integration unavailable</span>
+    }
   </header>
 
   <section aria-labelledby="hunter-workflow-title">
@@ -19,40 +21,69 @@
   <div class="review-grid">
     <section class="card panel" aria-labelledby="hunter-queue-title">
       <h3 id="hunter-queue-title">Verification applications</h3>
-      <form aria-labelledby="hunter-queue-title" aria-describedby="hunter-queue-status"
-            (submit)="$event.preventDefault()">
-        <fieldset disabled>
-          <div>
-            <label for="hunter-query">Applicant name or reference</label>
-            <input id="hunter-query" type="search" autocomplete="off">
-          </div>
-          <div>
-            <label for="hunter-status">Verification status</label>
-            <select id="hunter-status">
-              <option>All statuses</option>
-              @for (stage of stages; track stage) {
-                <option>{{ stage }}</option>
-              }
-            </select>
-          </div>
-          <button type="submit">Search</button>
-        </fieldset>
-      </form>
+      @if (!live) {
+        <form aria-labelledby="hunter-queue-title" aria-describedby="hunter-queue-status"
+              (submit)="$event.preventDefault()">
+          <fieldset disabled>
+            <div>
+              <label for="hunter-query">Applicant name or reference</label>
+              <input id="hunter-query" type="search" autocomplete="off">
+            </div>
+            <div>
+              <label for="hunter-status">Verification status</label>
+              <select id="hunter-status">
+                <option>All statuses</option>
+                @for (stage of stages; track stage) {
+                  <option>{{ stage }}</option>
+                }
+              </select>
+            </div>
+            <button type="submit">Search</button>
+          </fieldset>
+        </form>
+      }
+      @if (live && queueState() === 'ready') {
+        <div>
+          <label for="hunter-live-query">Place, district or application reference</label>
+          <input id="hunter-live-query" type="search" autocomplete="off"
+                 #queryInput (input)="search(queryInput.value)">
+        </div>
+      }
       <div class="table-scroll" role="region" aria-label="Application table" tabindex="0">
         <table aria-labelledby="hunter-queue-title" aria-describedby="hunter-queue-status">
           <thead>
             <tr>
-              <th scope="col">Applicant name</th>
+              <th scope="col">{{ live ? 'Place' : 'Applicant name' }}</th>
               <th scope="col">Application reference</th>
               <th scope="col">Submitted</th>
               <th scope="col">Status</th>
-              <th scope="col">Details</th>
+              <th scope="col">{{ live ? 'District' : 'Details' }}</th>
             </tr>
           </thead>
-          <tbody></tbody>
+          <tbody>
+            @for (row of visible(); track row.submissionId) {
+              <tr>
+                <td>{{ row.placeName }}</td>
+                <td>{{ row.submissionId }}</td>
+                <td>{{ row.submittedAtUtc ? (row.submittedAtUtc | date:'medium') : 'Unavailable' }}</td>
+                <td>{{ statuses[row.status] ?? 'Unknown' }}</td>
+                <td>{{ row.district }}</td>
+              </tr>
+            }
+          </tbody>
         </table>
       </div>
-      <p class="queue-state" id="hunter-queue-status" role="status">{{ queueMessages[queueState] }}</p>
+      <p class="queue-state" id="hunter-queue-status" role="status">
+        {{ queueMessages[queueState() === 'ready' && !filtered().length ? 'no-results' : queueState()] }}
+      </p>
+      @if (filtered().length > pageSize) {
+        <nav class="actions" aria-label="Application pages">
+          <button type="button" [disabled]="page() === 0" (click)="page.set(page() - 1)">Previous</button>
+          <span aria-live="polite">Page {{ page() + 1 }}</span>
+          <button type="button" [disabled]="(page() + 1) * pageSize >= filtered().length"
+                  (click)="page.set(page() + 1)">Next</button>
+        </nav>
+      }
     </section>
 
     <section class="card panel" aria-labelledby="hunter-details-title">
