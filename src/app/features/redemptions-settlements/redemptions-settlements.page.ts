@@ -3,6 +3,7 @@ import {
   afterNextRender, ChangeDetectionStrategy, Component, computed, ElementRef, inject, Injector,
   OnInit, signal, viewChild,
 } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { UiButton } from '../../shared/ui/button';
 import { UiCard } from '../../shared/ui/card';
 import { TableColumn, UiDataTable } from '../../shared/ui/data-table';
@@ -11,6 +12,7 @@ import { UiSearchInput } from '../../shared/ui/search-input';
 import { UiEmptyState, UiErrorState, UiLoadingState } from '../../shared/ui/states';
 import { StatusTone, UiStatusBadge } from '../../shared/ui/status-badge';
 import { RedemptionsDemoSource, redemptionTerms } from './data-access/redemptions-demo';
+import { RedemptionQueue } from './redemption-queue';
 import {
   ApprovedIssuance, AuditEvent, Redemption, RedemptionsSnapshot, issuanceStatus,
   issuanceStatuses, requestStatuses, requestTimeline,
@@ -27,12 +29,13 @@ const utc = new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: '
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [DatePipe, DecimalPipe, UiButton, UiCard, UiDataTable, UiEmptyState, UiErrorState, UiFilterSelect,
-    UiLoadingState, UiSearchInput, UiStatusBadge],
+    UiLoadingState, UiSearchInput, UiStatusBadge, RedemptionQueue],
   templateUrl: './redemptions-settlements.page.html',
   styleUrl: './redemptions-settlements.page.scss',
 })
 export class RedemptionsPage implements OnInit {
   private readonly source = inject(RedemptionsDemoSource);
+  protected readonly live = inject(ActivatedRoute, { optional: true })?.parent?.routeConfig?.path === 'admin';
   private readonly injector = inject(Injector);
   private readonly detailsHeading = viewChild<ElementRef<HTMLHeadingElement>>('detailsHeading');
   private readonly resultsHeading = viewChild<ElementRef<HTMLElement>>('resultsHeading');
@@ -114,6 +117,7 @@ export class RedemptionsPage implements OnInit {
   ];
 
   ngOnInit(): void {
+    if (this.live) return;
     void this.load();
   }
 
