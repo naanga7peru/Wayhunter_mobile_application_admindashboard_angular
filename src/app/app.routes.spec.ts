@@ -40,7 +40,7 @@ describe('Browser route titles', () => {
     const harness = await RouterTestingHarness.create('/login');
 
     expect(TestBed.inject(Title).getTitle()).toBe('Login - Wayhunter Admin');
-    expect(harness.routeNativeElement?.querySelector('h1')?.textContent).toBe('Wayhunter Admin sign-in');
+    expect(harness.routeNativeElement?.querySelector('h1')?.textContent).toBe('Wayhunter Admin Sign In');
   });
 
   it.each(modulePages)('sets the title and retains the shell heading for %s', async (path, title, heading) => {
@@ -78,7 +78,7 @@ describe('Browser route titles', () => {
     await harness.navigateByUrl('/admin/users');
     expect(TestBed.inject(Router).url).toBe('/login');
     expect(title.getTitle()).toBe('Login - Wayhunter Admin');
-    expect(harness.routeNativeElement?.querySelector('h1')?.textContent).toBe('Wayhunter Admin sign-in');
+    expect(harness.routeNativeElement?.querySelector('h1')?.textContent).toBe('Wayhunter Admin Sign In');
   });
 
   it('sets the Login title when production blocks a preview deep link', async () => {

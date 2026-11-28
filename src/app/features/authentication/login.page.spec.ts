@@ -23,7 +23,12 @@ describe('Admin authentication screens', () => {
     expect(page.querySelector('label[for="admin-email"]')?.textContent).toBe('Email address');
     expect(page.querySelector('label[for="admin-password"]')?.textContent).toBe('Password');
     expect(page.querySelectorAll('input:required:disabled')).toHaveLength(2);
-    expect(page.querySelector('button:disabled')?.textContent).toBe('Sign in');
+    expect(page.querySelector('button[type="submit"]:disabled')?.textContent).toBe('Sign in');
+    expect(
+      page
+        .querySelector('button[aria-controls="admin-password"]:disabled')
+        ?.getAttribute('aria-label'),
+    ).toBe('Show password');
   });
 
   it('cancels form submission without issuing a request', () => {
