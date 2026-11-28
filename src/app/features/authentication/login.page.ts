@@ -26,27 +26,76 @@ import { RouterLink } from '@angular/router';
                 <stop offset=".78" stop-color="#dda33d" />
                 <stop offset="1" stop-color="#966317" stop-opacity=".45" />
               </linearGradient>
+              <linearGradient id="adm01-upright-wire" href="#adm01-wire"
+                gradientUnits="userSpaceOnUse" x1="0" x2="0" y1="200" y2="640" />
+              <linearGradient id="adm01-liquid" gradientUnits="userSpaceOnUse"
+                x1="0" y1="0" x2="210" y2="0" spreadMethod="repeat" gradientTransform="skewX(-18)">
+                <stop stop-color="#9b5917" stop-opacity="0" />
+                <stop offset=".24" stop-color="#864707" stop-opacity=".36" />
+                <stop offset=".47" stop-color="#f5b347" stop-opacity=".16" />
+                <stop offset=".59" stop-color="#ffdc83" stop-opacity=".56" />
+                <stop offset=".64" stop-color="#fff8df" stop-opacity=".88" />
+                <stop offset=".69" stop-color="#ffdf92" stop-opacity=".55" />
+                <stop offset=".76" stop-color="#bc761b" stop-opacity=".25" />
+                <stop offset=".84" stop-color="#fff1b8" stop-opacity=".32" />
+                <stop offset="1" stop-color="#9b5917" stop-opacity="0" />
+              </linearGradient>
+              <path id="adm01-upper-shape" d="M0 214C83 96 174 41 253 0H442C351 54 279 52 177 99 86 140 34 191 0 235Z" />
+              <clipPath id="adm01-upper-clip"><use href="#adm01-upper-shape" /></clipPath>
+              <path id="adm01-lower-shape" d="M1600 678C1443 731 1388 813 1302 875 1238 922 1155 944 1004 970 1287 953 1402 857 1600 834Z" />
+              <clipPath id="adm01-lower-clip"><use href="#adm01-lower-shape" /></clipPath>
+              <path id="adm01-fold-shape" d="M0 230C115 139 188 129 318 121 460 112 553 82 600 0V78C523 154 409 157 298 184 252 195 205 209 173 230Z" />
+              <clipPath id="adm01-fold-clip"><use href="#adm01-fold-shape" /></clipPath>
             </defs>
             <path class="blue-fold" d="M0 207C155 94 403 151 642 0H478C325 96 103 91 0 151ZM1600 341C1469 560 1490 687 1198 798L1600 741Z" />
-            <path class="corner-ribbon" d="M0 214C83 96 174 41 253 0H442C351 54 279 52 177 99 86 140 34 191 0 235Z" />
-            <path class="corner-ribbon" d="M1600 678C1443 731 1388 813 1302 875 1238 922 1155 944 1004 970 1287 953 1402 857 1600 834Z" />
-            <g class="gold-wires">
-              <path d="M0 337C178 39 374 167 603 0M1050 163C1332 -42 1370 -28 1600 151M0 604C201 592 300 747 419 810M0 785C184 752 243 838 402 837M1130 760C1435 757 1470 586 1600 498M845 1000C1020 932 1200 944 1328 883S1503 765 1600 739" />
-              <path d="M141 390V595M158 269V638M176 315V638M1416 284V553M1432 200V586M1447 288V539" />
+            <use class="corner-ribbon" href="#adm01-upper-shape" />
+            <g clip-path="url(#adm01-upper-clip)">
+              <path class="liquid-ridge" d="M0 222C75 125 138 84 203 49S260 24 307 0" />
+              <rect class="liquid-flow liquid-flow--upper" x="-210" width="652" height="235" />
             </g>
-            <path class="ribbon-reflection" pathLength="100" d="M0 227C102 95 197 53 277 12" />
-            <path class="ribbon-reflection ribbon-reflection--lower" pathLength="100" d="M1080 957C1340 924 1433 782 1600 720" />
-            <path class="line-reflection" pathLength="100" d="M0 337C178 39 374 167 603 0" />
-            <path class="line-reflection line-reflection--lower" pathLength="100" d="M1160 758C1430 747 1470 586 1600 498" />
+            <use class="corner-ribbon" href="#adm01-lower-shape" />
+            <g clip-path="url(#adm01-lower-clip)">
+              <path class="liquid-ridge" d="M1600 760C1461 797 1405 860 1315 907S1170 947 1070 960" />
+              <rect class="liquid-flow liquid-flow--lower" x="794" y="678" width="806" height="292" />
+            </g>
+            <g class="gold-wires">
+              <path id="adm01-wire-0" pathLength="100" d="M0 337C178 39 374 167 603 0" />
+              <use class="line-reflection" href="#adm01-wire-0" />
+              <path id="adm01-wire-1" pathLength="100" d="M1050 163C1332 -42 1370 -28 1600 151" />
+              <use class="line-reflection" href="#adm01-wire-1" />
+              <path id="adm01-wire-2" pathLength="100" d="M0 604C201 592 300 747 419 810" />
+              <use class="line-reflection" href="#adm01-wire-2" />
+              <path id="adm01-wire-3" pathLength="100" d="M0 785C184 752 243 838 402 837" />
+              <use class="line-reflection" href="#adm01-wire-3" />
+              <path id="adm01-wire-4" pathLength="100" d="M1130 760C1435 757 1470 586 1600 498" />
+              <use class="line-reflection" href="#adm01-wire-4" />
+              <path id="adm01-wire-5" pathLength="100" d="M845 1000C1020 932 1200 944 1328 883S1503 765 1600 739" />
+              <use class="line-reflection" href="#adm01-wire-5" />
+              <path id="adm01-wire-6" class="upright-wire" pathLength="100" d="M141 390V595" />
+              <use class="line-reflection" href="#adm01-wire-6" />
+              <path id="adm01-wire-7" class="upright-wire" pathLength="100" d="M158 269V638" />
+              <use class="line-reflection" href="#adm01-wire-7" />
+              <path id="adm01-wire-8" class="upright-wire" pathLength="100" d="M176 315V638" />
+              <use class="line-reflection" href="#adm01-wire-8" />
+              <path id="adm01-wire-9" class="upright-wire" pathLength="100" d="M1416 284V553" />
+              <use class="line-reflection" href="#adm01-wire-9" />
+              <path id="adm01-wire-10" class="upright-wire" pathLength="100" d="M1432 200V586" />
+              <use class="line-reflection" href="#adm01-wire-10" />
+              <path id="adm01-wire-11" class="upright-wire" pathLength="100" d="M1447 288V539" />
+              <use class="line-reflection" href="#adm01-wire-11" />
+            </g>
           </svg>
       <div class="login-card">
         <div class="welcome-panel" aria-hidden="true">
           <div class="glass">
             <svg class="panel-fold" viewBox="0 0 600 230" preserveAspectRatio="none" focusable="false">
               <path fill="#092554" d="M0 230H600V5C551 159 387 156 233 185 166 198 123 211 91 230Z" />
-              <path fill="url(#adm01-metal)" d="M0 230C115 139 188 129 318 121 460 112 553 82 600 0V78C523 154 409 157 298 184 252 195 205 209 173 230Z" />
+              <use fill="url(#adm01-metal)" href="#adm01-fold-shape" />
               <path fill="#fff5d5" fill-opacity=".62" stroke="#fff7e4" stroke-width="2"
                 d="M0 230C115 139 188 129 318 121 460 112 553 82 600 0V32C535 119 449 132 316 144 194 156 108 181 65 230Z" />
+              <g clip-path="url(#adm01-fold-clip)">
+                <rect class="liquid-flow liquid-flow--fold" x="-210" width="810" height="230" />
+              </g>
             </svg>
           </div>
           <div class="welcome-copy">
