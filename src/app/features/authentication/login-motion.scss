@@ -4,27 +4,47 @@
   initial-value: 0turn;
 }
 
+.login-card {
+  background: linear-gradient(128deg, #d8deeb, #fff 44%, #efedf0) padding-box,
+    radial-gradient(ellipse 5% 2% at 46% 0%, #fffbe8, transparent) border-box,
+    radial-gradient(ellipse 6% 2% at 20% 100%, #fff4b3, transparent) border-box,
+    conic-gradient(from var(--adm01-edge-angle), transparent 3%, #9d601b44 12%,
+      #ffe6a379 16%, #fff6ddda 18%, #ffdc7577 20%, transparent 28%,
+      transparent 57%, #f1b74459 64%, #ffedaf93 68%, transparent 75%) border-box,
+    var(--login-metal) border-box;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .glass { animation: diagonal-sweep 400ms cubic-bezier(.22, .61, .36, 1) both; }
   .welcome-copy { animation: welcome-settle 320ms ease-out 80ms both; }
-  .ribbon-reflection { animation: gold-glint 11s ease-in-out infinite; }
-  .ribbon-reflection--lower { animation-delay: -5.5s; }
-  .line-reflection { animation: gold-glint 9s ease-in-out -2s infinite; }
-  .line-reflection--lower { animation-delay: -6s; }
+  .liquid-flow { animation: liquid-travel 5s linear infinite; }
+  .liquid-flow--lower { animation: liquid-travel 6s linear -2.4s infinite reverse; }
+  .liquid-flow--fold { animation: liquid-travel 6s linear -4.1s infinite; }
+
+  .line-reflection { animation: line-travel 8s linear -1s infinite; }
+  .line-reflection:nth-of-type(3n + 2) { animation-delay: -3.7s; }
+  .line-reflection:nth-of-type(3n + 3) { animation-delay: -6.1s; }
+
   .login-screen::before { animation: blue-light 15s ease-in-out infinite alternate; }
-  .login-card::after {
-    content: '';
-    position: absolute;
-    z-index: 3;
-    inset: 0;
-    border-radius: inherit;
-    padding: 2px;
+  .login-card { animation: edge-travel 9s linear -2s infinite; }
+  .glass::after, .portal-title::before, .portal-title::after,
+  .welcome-ornament::before, .welcome-ornament::after, h1::after {
+    background-image: linear-gradient(#fff1b600, #fff1b600 24%, #fff6d7ba 47%,
+      #ffe19870 53%, #9e5c1f55 65%, #fff1b600 82%, #fff1b600), var(--login-metal);
+    background-size: 100% 120px, 100% 100%;
+    animation: trim-travel 8s linear -3s infinite;
     pointer-events: none;
-    background: conic-gradient(from var(--adm01-edge-angle), transparent 88%, #e7bb6055 94%, #fff5d3 97%, transparent);
-    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    mask-composite: exclude;
-    animation: edge-shimmer 8s linear infinite;
   }
+
+  .portal-title::before, .portal-title::after, .welcome-ornament::before,
+  .welcome-ornament::after, h1::after {
+    background-image: linear-gradient(90deg, transparent 24%, #fff6d7ba 47%,
+      #ffe19870 53%, #9e5c1f55 65%, transparent 82%), var(--login-metal);
+    background-size: 48px 100%, 100% 100%;
+  }
+
+  .welcome-ornament::before, .portal-title::after { animation-delay: -5s; }
+  .welcome-ornament::after, h1::after { animation-delay: -7s; }
 }
 
 @keyframes diagonal-sweep {
@@ -32,14 +52,8 @@
   to { transform: translate(0, 0); opacity: 1; }
 }
 @keyframes welcome-settle { from { transform: translateX(-5%); opacity: 0; } }
-@keyframes gold-glint {
-  0% { stroke-dashoffset: 9; opacity: 0; }
-  16%, 49% { opacity: .85; }
-  74%, 100% { stroke-dashoffset: -100; opacity: 0; }
-}
-@keyframes edge-shimmer {
-  0% { opacity: 0; }
-  15%, 72% { opacity: .75; }
-  85%, 100% { --adm01-edge-angle: 1turn; opacity: 0; }
-}
+@keyframes liquid-travel { to { transform: translateX(210px); } }
+@keyframes line-travel { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -100; } }
+@keyframes edge-travel { to { --adm01-edge-angle: 1turn; } }
+@keyframes trim-travel { to { background-position: 48px 120px, 0 0; } }
 @keyframes blue-light { from { opacity: .55; } to { opacity: .95; transform: translateX(2%); } }
