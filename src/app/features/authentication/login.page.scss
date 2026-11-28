@@ -1,0 +1,158 @@
+:host {
+  --login-ink: #09204f;
+  --login-metal: linear-gradient(125deg, #9c5b17, #ffd367 17%, #fff5cd 27%, #ad6912 49%, #ffe5a2 73%, #945915 91%, #ffda6f);
+}
+
+.login-card {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: 54% 46%;
+  inline-size: min(100%, clamp(44rem, 67.7vw, 75rem));
+  min-block-size: clamp(33rem, 69.5svh, 47rem);
+  border: clamp(4px, .48vw, 8px) solid transparent;
+  border-radius: clamp(1.4rem, 3.2vw, 3.1rem);
+  overflow: hidden;
+  color: var(--login-ink);
+  background: linear-gradient(128deg, #d8deeb, #fff 44%, #efedf0) padding-box,
+    radial-gradient(ellipse 5% 2% at 46% 0%, #fffbe8, transparent) border-box,
+    radial-gradient(ellipse 6% 2% at 20% 100%, #fff4b3, transparent) border-box,
+    var(--login-metal) border-box;
+  box-shadow: inset 0 0 0 1px #fff3cb, 0 0 1.8rem #ecad4855, 0 1.4rem 3rem #010a22bb;
+}
+
+.login-pane {
+  grid-area: 1 / 1;
+  z-index: 2;
+  align-self: center;
+  padding: 2rem 0 2rem clamp(2rem, 4.3vw, 4.6rem);
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(1.85rem, 2.55vw, 2.65rem);
+  line-height: 1.1;
+}
+
+h1::after {
+  content: '';
+  display: block;
+  width: 3em;
+  height: .15em;
+  margin: .35em 0 .55em;
+  border-radius: 1em;
+  background: var(--login-metal);
+}
+
+.notice, form { inline-size: min(100%, 28.5rem); }
+.notice {
+  display: grid;
+  grid-template-columns: 1.8em 1fr;
+  gap: .9em;
+  padding: .9em 1em;
+  border: 1px solid #ccd4e4;
+  border-radius: .75rem;
+  background: linear-gradient(130deg, #ffffffd9, #e3e6efbf);
+  font-size: clamp(.9rem, 1.15vw, 1.125rem);
+}
+
+.notice-icon {
+  display: grid;
+  place-items: center;
+  width: 1.75em;
+  height: 1.75em;
+  border: 2px solid #a77821;
+  border-radius: 50%;
+  color: #845c17;
+  font-family: Georgia, serif;
+  font-weight: 700;
+}
+
+.notice p { margin: .28em 0 0; line-height: 1.26; }
+fieldset { display: grid; gap: .42rem; min-width: 0; margin: 1rem 0 0; padding: 0; border: 0; }
+label { font-weight: 700; }
+.credential-field { position: relative; margin-bottom: .5rem; }
+.credential-field input, .sign-in {
+  width: 100%;
+  min-height: clamp(2.7rem, 3.3vw, 3.3rem);
+  border: 1px solid #996813;
+  border-radius: .8rem;
+}
+.credential-field input {
+  padding: .4rem 2.65rem;
+  background: #ffffffb8;
+  opacity: 1;
+}
+.field-icon {
+  position: absolute;
+  inset: 50% auto auto .9rem;
+  width: 1.4rem;
+  transform: translateY(-50%);
+  fill: none;
+  stroke: #684112;
+  stroke-width: 2;
+  pointer-events: none;
+}
+.password-eye {
+  position: absolute;
+  inset: 0 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 2.7rem;
+  padding: 0;
+  color: #684112;
+  background: transparent;
+  cursor: not-allowed;
+}
+.sign-in {
+  margin-block-start: .75rem;
+  border-color: #ad791b;
+  background: linear-gradient(160deg, #f8de91, #dd9a31 30%, #ffdc78 55%, #b8781d);
+  box-shadow: inset 0 1px #ffedb1, 0 .2rem .45rem #a45e1733;
+  color: var(--login-ink);
+  font-size: clamp(1rem, 1.5vw, 1.4rem);
+  cursor: not-allowed;
+}
+.login-pane a { display: inline-block; margin-block-start: 1.25rem; color: #142d77; text-decoration: underline; }
+
+.welcome-panel { grid-area: 1 / 1 / 2 / -1; position: relative; display: grid; grid-template-columns: 57% 43%; }
+.glass {
+  position: absolute;
+  inset: 0 0 0 48%;
+  clip-path: polygon(28% 0, 100% 0, 100% 100%, 0 100%);
+  background:
+    radial-gradient(ellipse at 62% 45%, #fff8e8, transparent 66%),
+    linear-gradient(130deg, #bf852c, #f5dcb0 24%, #fff7df 59%, #d9a24c);
+}
+.glass::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  clip-path: polygon(28% 0, 28.8% 0, .8% 100%, 0 100%);
+  background: var(--login-metal);
+}
+.welcome-copy {
+  position: relative;
+  grid-column: 2;
+  align-self: center;
+  text-align: center;
+  padding: .5rem .8rem 4rem;
+  text-transform: uppercase;
+}
+.wordmark { font-size: clamp(1.2rem, 2.7vw, 2.75rem); font-weight: 800; letter-spacing: .12em; }
+.welcome-title { margin: .75em 0 .22em; font: 500 clamp(1.95rem, 3.7vw, 3.7rem)/.94 Georgia, serif; }
+
+@media (min-width: 43.01rem) and (max-width: 68rem) {
+  .login-pane { padding-inline-end: 1.5rem; }
+}
+@media (max-width: 43rem) {
+  .login-card { grid-template-columns: minmax(0, 1fr); max-width: 29rem; min-height: 0; }
+  .login-pane { grid-area: 1 / 1; padding: clamp(1rem, 5vw, 1.65rem); }
+  .notice { gap: .6em; }
+  .welcome-panel { grid-area: 2 / 1; grid-template-columns: 1fr; }
+  .glass { inset: 0; clip-path: none; border-top: 2px solid #c48d30; }
+  .glass::after { display: none; }
+  .welcome-copy { grid-column: 1; padding: .8rem .75rem .95rem; }
+  .welcome-title { margin-block-start: .5em; }
+  .welcome-title br { display: none; }
+}

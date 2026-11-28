@@ -1,0 +1,45 @@
+@property --adm01-edge-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0turn;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .glass { animation: diagonal-sweep 400ms cubic-bezier(.22, .61, .36, 1) both; }
+  .welcome-copy { animation: welcome-settle 320ms ease-out 80ms both; }
+  .ribbon-reflection { animation: gold-glint 11s ease-in-out infinite; }
+  .ribbon-reflection--lower { animation-delay: -5.5s; }
+  .line-reflection { animation: gold-glint 9s ease-in-out -2s infinite; }
+  .line-reflection--lower { animation-delay: -6s; }
+  .login-screen::before { animation: blue-light 15s ease-in-out infinite alternate; }
+  .login-card::after {
+    content: '';
+    position: absolute;
+    z-index: 3;
+    inset: 0;
+    border-radius: inherit;
+    padding: 2px;
+    pointer-events: none;
+    background: conic-gradient(from var(--adm01-edge-angle), transparent 88%, #e7bb6055 94%, #fff5d3 97%, transparent);
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    animation: edge-shimmer 8s linear infinite;
+  }
+}
+
+@keyframes diagonal-sweep {
+  from { transform: translate(-92%, -3%); opacity: .12; }
+  to { transform: translate(0, 0); opacity: 1; }
+}
+@keyframes welcome-settle { from { transform: translateX(-5%); opacity: 0; } }
+@keyframes gold-glint {
+  0% { stroke-dashoffset: 9; opacity: 0; }
+  16%, 49% { opacity: .85; }
+  74%, 100% { stroke-dashoffset: -100; opacity: 0; }
+}
+@keyframes edge-shimmer {
+  0% { opacity: 0; }
+  15%, 72% { opacity: .75; }
+  85%, 100% { --adm01-edge-angle: 1turn; opacity: 0; }
+}
+@keyframes blue-light { from { opacity: .55; } to { opacity: .95; transform: translateX(2%); } }
